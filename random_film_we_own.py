@@ -191,6 +191,7 @@ if collectionflag == 0:
 			csvwriter.writerow([films[i],years[i]])
 
 # Status update:
+print('\nNumber of films in collection: '+str(len(films)))
 print('\nGetting genres for all collection films.')
 
 # If newgenres = 0, check for previous film genre output:
@@ -308,9 +309,11 @@ if ratingsflag == 0:
 			csvwriter.writerow([films4[i],ratings4[i]])
 
 # Status update:
+print('\nNumber of total ratings: '+str(len(films4)))
 print('\nMatching film collection with ratings.')
 
 # Match ratings if they exist, otherwise make them -1.0:
+ratingscount = 0
 newfilms = []
 newyears = []
 newgenres = []
@@ -327,6 +330,7 @@ for i in range(len(films3)):
 			newratings = newratings+[ratings4[j]/2.0]
 			del films4[j]
 			del ratings4[j]
+			ratingscount = ratingscount+1
 		j = j+1
 	if flag == 0:
 		newfilms = newfilms+[films3[i]]
@@ -335,6 +339,7 @@ for i in range(len(films3)):
 		newratings = newratings+[-1.0]
 
 # Status update:
+print('\nNumber of collection that has been rated: '+str(ratingscount))
 print('\nLimiting years, if requested.')
 
 # Limit years:
@@ -360,6 +365,7 @@ if len(ycutfilms) == 0:
 	sys.exit('ERROR - in function "MAIN" - No films in the year range given')
 
 # Status update:
+print('\nNumber fitting year criterion: '+str(len(ycutfilms)))
 print('\nLimiting ratings, if requested.')
 
 # Limit ratings:
@@ -386,6 +392,7 @@ else:
 	rcutratings = [item for item in ycutratings]
 
 # Status update:
+print('\nNumber fitting rating criterion: '+str(len(rcutfilms)))
 print('\nLimiting genres, if requested.')
 
 # Limit genres:
@@ -448,6 +455,7 @@ finalgenres = [item for item in gcutgenres]
 finalratings = [item for item in gcutratings]
 
 # Status update:
+print('\nNumber fitting genre criterion: '+str(len(gcutfilms)))
 print('\nRequested films obtained. Choosing one randomly.')
 
 # Grab a random film:

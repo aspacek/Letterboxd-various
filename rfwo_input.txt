@@ -1,11 +1,11 @@
 
-minyear = 0
-maxyear = 0
+minyear = 1960
+maxyear = 1970
 
 minrating = -1
 maxrating = -1
 
-genre = actadv
+genre = mystery
 
 allnew = 0
 newgenres = 0
