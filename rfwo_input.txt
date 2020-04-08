@@ -7,7 +7,7 @@ maxrating = -1
 
 genre = thriller
 
-number = 5
+number = 3
 
 allnew = 0
 newgenres = 0

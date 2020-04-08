@@ -472,11 +472,16 @@ year = []
 genre = []
 rating = []
 for i in range(number):
-	choice = choice+[random.choice(finalfilms)]
+	flag = 0
+	while flag == 0:
+		thischoice = random.choice(finalfilms)
+		if thischoice not in choice:
+			flag = 1
+	choice = choice+[thischoice]
 	# Get the year and rating:
-	year = year+[finalyears[finalfilms.index(choice[i])]]
-	genre = genre+[finalgenres[finalfilms.index(choice[i])]]
-	rating = rating+[finalratings[finalfilms.index(choice[i])]]
+	year = year+[finalyears[finalfilms.index(thischoice)]]
+	genre = genre+[finalgenres[finalfilms.index(thischoice)]]
+	rating = rating+[finalratings[finalfilms.index(thischoice)]]
 
 # Print out the result:
 print('\n********************')
