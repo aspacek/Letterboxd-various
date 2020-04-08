@@ -109,6 +109,8 @@ for i in range(len(keyword)):
 	# newgenres
 	elif keyword[i] == 'newgenres' and equals[i] == '=':
 		newgenres = int(parameter[i])
+	elif keyword[i] == 'number' and equals[i] == '=':
+		number = int(parameter[i])
 # Defaults, if parameters not found:
 if 'minyear' not in locals():
 	print('\nminyear not found in input file; minyear = 0 by default.')
@@ -131,6 +133,9 @@ if 'allnew' not in locals():
 if 'newgenres' not in locals():
 	print('\nnewgenres not found in input file; newgenres = 0 by default.')
 	newgenres = 0
+if 'number' not in locals():
+	print('\nnumber not found in input file; number = 1 by default.')
+	number = 1
 
 # Status update:
 print('\nReading in Amanda\'s and Alex\'s film collection.')
@@ -458,18 +463,26 @@ finalratings = [item for item in gcutratings]
 print('\nNumber fitting genre criterion: '+str(len(gcutfilms)))
 print('\nRequested films obtained. Choosing one randomly.')
 
-# Grab a random film:
+# Grab a random "number" of films:
 random.seed()
-choice = random.choice(finalfilms)
-# Get the year and rating:
-year = finalyears[finalfilms.index(choice)]
-genre = finalgenres[finalfilms.index(choice)]
-rating = finalratings[finalfilms.index(choice)]
+if len(finalfilms) < number:
+	number = len(finalfilms)
+choice = []
+year = []
+genre = []
+rating = []
+for i in range(number):
+	choice = choice+[random.choice(finalfilms)]
+	# Get the year and rating:
+	year = year+[finalyears[finalfilms.index(choice[i])]]
+	genre = genre+[finalgenres[finalfilms.index(choice[i])]]
+	rating = rating+[finalratings[finalfilms.index(choice[i])]]
 
 # Print out the result:
 print('\n********************')
-if rating == -1.0:
-	print('{} -- {:d} -- no rating -- {}'.format(choice,year,genre))
-else:
-	print('{} -- {:d} -- {:.1f}/5 -- {}'.format(choice,year,rating,genre))
+for i in range(len(choice)):
+	if rating[i] == -1.0:
+		print('{} -- {:d} -- no rating -- {}'.format(choice[i],year[i],genre[i]))
+	else:
+		print('{} -- {:d} -- {:.1f}/5 -- {}'.format(choice[i],year[i],rating[i],genre[i]))
 print('********************\n')

@@ -1,11 +1,13 @@
 
-minyear = 1960
-maxyear = 1970
+minyear = 1965
+maxyear = 1985
 
 minrating = -1
 maxrating = -1
 
-genre = mystery
+genre = thriller
+
+number = 5
 
 allnew = 0
 newgenres = 0
