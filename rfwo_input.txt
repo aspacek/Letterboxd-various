@@ -1,6 +1,6 @@
 
-minyear = 1970
-maxyear = 1975
+minyear = 0
+maxyear = 0
 
 minrating = 0
 maxrating = 0
@@ -9,4 +9,6 @@ dounrated = 0
 
 genre = any
 
-allnew = 1
+allnew = 0
+
+newgenres = 0
