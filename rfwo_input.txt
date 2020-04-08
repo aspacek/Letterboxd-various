@@ -2,13 +2,10 @@
 minyear = 0
 maxyear = 0
 
-minrating = 0
-maxrating = 0
+minrating = -1
+maxrating = -1
 
-dounrated = 0
-
-genre = any
+genre = actadv
 
 allnew = 0
-
 newgenres = 0

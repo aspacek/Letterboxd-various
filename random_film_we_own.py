@@ -46,6 +46,7 @@ def getstrings(which,prestring,poststring,source):
 
 ########################
 # Acceptable genres are:
+# 'actadv'
 # 'action'
 # 'adventure'
 # 'animation'
@@ -61,6 +62,7 @@ def getstrings(which,prestring,poststring,source):
 # 'mystery'
 # 'romance'
 # 'romcom'
+# 'romdram'
 # 'science-fiction'
 # 'thriller'
 # 'tv-movie'
@@ -98,9 +100,6 @@ for i in range(len(keyword)):
 	# maxrating
 	elif keyword[i] == 'maxrating' and equals[i] == '=':
 		maxrating = float(parameter[i])
-	# dounrated
-	elif keyword[i] == 'dounrated' and equals[i] == '=':
-		dounrated = int(parameter[i])
 	# genre
 	elif keyword[i] == 'genre' and equals[i] == '=':
 		genre = parameter[i]
@@ -123,9 +122,6 @@ if 'minrating' not in locals():
 if 'maxrating' not in locals():
 	print('\nmaxrating not found in input file; maxrating = 0 by default.')
 	maxrating = 0
-if 'dounrated' not in locals():
-	print('\ndounrated not found in input file; dounrated = 0 by default.')
-	dounrated = 0
 if 'genre' not in locals():
 	print('\ngenre not found in input file; genre = any by default.')
 	genre = 'any'
@@ -135,12 +131,6 @@ if 'allnew' not in locals():
 if 'newgenres' not in locals():
 	print('\nnewgenres not found in input file; newgenres = 0 by default.')
 	newgenres = 0
-
-# Check inputs:
-if dounrated == 1 and minrating != 0:
-	sys.exit('ERROR - in function "MAIN" - Can\'t input min/max ratings if dounrated = 1')
-elif dounrated == 1 and maxrating != 0:
-	sys.exit('ERROR - in function "MAIN" - Can\'t input min/max ratings if dounrated = 1')
 
 # Status update:
 print('\nReading in Amanda\'s and Alex\'s film collection.')
@@ -378,6 +368,8 @@ rcutyears = []
 rcutgenres = []
 rcutratings = []
 if minrating != 0 or maxrating != 0:
+	if maxrating == 0:
+		maxrating = 5
 	for i in range(len(ycutfilms)):
 		if ycutratings[i] >= minrating and ycutratings[i] <= maxrating:
 			rcutfilms = rcutfilms+[ycutfilms[i]]
@@ -386,16 +378,6 @@ if minrating != 0 or maxrating != 0:
 			rcutratings = rcutratings+[ycutratings[i]]
 	if len(rcutfilms) == 0:
 		sys.exit('ERROR - in function "MAIN" - No films in the rating range given')
-# Otherwise, unrated films only?:
-elif dounrated == 1:
-	for i in range(len(ycutfilms)):
-		if ycutratings[i] == -1:
-			rcutfilms = rcutfilms+[ycutfilms[i]]
-			rcutyears = rcutyears+[ycutyears[i]]
-			rcutgenres = rcutgenres+[ycutgenres[i]]
-			rcutratings = rcutratings+[ycutratings[i]]
-	if len(rcutfilms) == 0:
-		sys.exit('ERROR - in function "MAIN" - No films are unrated (WOW!)')
 # Otherwise, just keep all of the films:
 else:
 	rcutfilms = [item for item in ycutfilms]
@@ -403,11 +385,67 @@ else:
 	rcutgenres = [item for item in ycutgenres]
 	rcutratings = [item for item in ycutratings]
 
+# Status update:
+print('\nLimiting genres, if requested.')
+
+# Limit genres:
+gcutfilms = []
+gcutyears = []
+gcutgenres = []
+gcutratings = []
+if genre != 'any':
+	for i in range(len(rcutfilms)):
+		genres = rcutgenres[i].split(' ')
+		flag1 = 0
+		flag2 = 0
+		for j in range(len(genres)):
+			if genre == genres[j]:
+				gcutfilms = gcutfilms+[rcutfilms[i]]
+				gcutyears = gcutyears+[rcutyears[i]]
+				gcutgenres = gcutgenres+[rcutgenres[i]]
+				gcutratings = gcutratings+[rcutratings[i]]
+			elif genre == 'romcom':
+				if genres[j] == 'romance':
+					flag1 = 1
+				elif genres[j] == 'comedy':
+					flag2 = 1
+				if flag1 == 1 and flag2 == 1:
+					gcutfilms = gcutfilms+[rcutfilms[i]]
+					gcutyears = gcutyears+[rcutyears[i]]
+					gcutgenres = gcutgenres+[rcutgenres[i]]
+					gcutratings = gcutratings+[rcutratings[i]]
+			elif genre == 'romdram':
+				if genres[j] == 'romance':
+					flag1 = 1
+				elif genres[j] == 'drama':
+					flag2 = 1
+				if flag1 == 1 and flag2 == 1:
+					gcutfilms = gcutfilms+[rcutfilms[i]]
+					gcutyears = gcutyears+[rcutyears[i]]
+					gcutgenres = gcutgenres+[rcutgenres[i]]
+					gcutratings = gcutratings+[rcutratings[i]]
+			elif genre == 'actadv':
+				if genres[j] == 'action':
+					flag1 = 1
+				elif genres[j] == 'adventure':
+					flag2 = 1
+				if flag1 == 1 and flag2 == 1:
+					gcutfilms = gcutfilms+[rcutfilms[i]]
+					gcutyears = gcutyears+[rcutyears[i]]
+					gcutgenres = gcutgenres+[rcutgenres[i]]
+					gcutratings = gcutratings+[rcutratings[i]]
+# Otherwise, just keep all of the films:
+else:
+	gcutfilms = [item for item in rcutfilms]
+	gcutyears = [item for item in rcutyears]
+	gcutgenres = [item for item in rcutgenres]
+	gcutratings = [item for item in rcutratings]
+
 # Denote the final result arrays:
-finalfilms = [item for item in rcutfilms]
-finalyears = [item for item in rcutyears]
-finalgenres = [item for item in rcutgenres]
-finalratings = [item for item in rcutratings]
+finalfilms = [item for item in gcutfilms]
+finalyears = [item for item in gcutyears]
+finalgenres = [item for item in gcutgenres]
+finalratings = [item for item in gcutratings]
 
 # Status update:
 print('\nRequested films obtained. Choosing one randomly.')
