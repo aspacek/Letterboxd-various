@@ -1,7 +1,9 @@
 import sys
+import csv
 import requests
 import random
 
+##################################
 def findstrings(substring,string):
 	lastfound = -1
 	while True:
@@ -10,6 +12,7 @@ def findstrings(substring,string):
 			break
 		yield lastfound
 
+##################################################
 def getstrings(which,prestring,poststring,source):
 	# First find the start of the number of pages string:
 	length = len(prestring)
@@ -37,16 +40,10 @@ def getstrings(which,prestring,poststring,source):
 	elif which == 'all':
 		return strings
 
-# Grabs values entered through execution
-# i.e. >>python user_film_compare.py <year min> <year max> <rating min> <rating max> <unrated?> <genre>
-inputs = sys.argv
-minyear = int(inputs[1])
-maxyear = int(inputs[2])
-minrating = float(inputs[3])
-maxrating = float(inputs[4])
-dounrated = int(inputs[5])
-genre = inputs[6]
+############################################
+############################################
 
+########################
 # Acceptable genres are:
 # 'action'
 # 'adventure'
@@ -68,6 +65,69 @@ genre = inputs[6]
 # 'tv-movie'
 # 'war'
 # 'western'
+###########
+
+# Grabs values entered through execution
+# i.e. >>python user_film_compare.py input.txt
+inputs = sys.argv
+input = inputs[1]
+
+# Read in an input file:
+with open(input) as csv_file:
+	csv_reader = csv.reader(csv_file, delimiter=' ',skipinitialspace=True)
+	keyword = []
+	equals = []
+	parameter = []
+	for row in csv_reader:
+		if len(row) == 3:
+			keyword = keyword+[row[0]]
+			equals = equals+[row[1]]
+			parameter = parameter+[row[2]]
+# Get parameters:
+for i in range(len(keyword)):
+	# minyear
+	if keyword[i] == 'minyear' and equals[i] == '=':
+		minyear = int(parameter[i])
+	# maxyear
+	elif keyword[i] == 'maxyear' and equals[i] == '=':
+		maxyear = int(parameter[i])
+	# minrating
+	elif keyword[i] == 'minrating' and equals[i] == '=':
+		minrating = float(parameter[i])
+	# maxrating
+	elif keyword[i] == 'maxrating' and equals[i] == '=':
+		maxrating = float(parameter[i])
+	# dounrated
+	elif keyword[i] == 'dounrated' and equals[i] == '=':
+		dounrated = int(parameter[i])
+	# genre
+	elif keyword[i] == 'genre' and equals[i] == '=':
+		genre = parameter[i]
+	# allnew
+	elif keyword[i] == 'allnew' and equals[i] == '=':
+		allnew = int(parameter[i])
+# Defaults, if parameters not found:
+if not('minyear' in locals()):
+	print('\nminyear not found in input file; minyear = 0 by default.')
+	minyear = 0
+if not('maxyear' in locals()):
+	print('\nmaxyear not found in input file; maxyear = 0 by default.')
+	maxyear = 0
+if not('minrating' in locals()):
+	print('\nminrating not found in input file; minrating = 0 by default.')
+	minrating = 0
+if not('maxrating' in locals()):
+	print('\nmaxrating not found in input file; maxrating = 0 by default.')
+	maxrating = 0
+if not('dounrated' in locals()):
+	print('\ndounrated not found in input file; dounrated = 0 by default.')
+	dounrated = 0
+if not('genre' in locals()):
+	print('\ngenre not found in input file; genre = any by default.')
+	genre = 'any'
+if not('allnew' in locals()):
+	print('\nallnew not found in input file; allnew = 0 by default.')
+	allnew = 0
 
 # Check inputs:
 if dounrated == 1 and minrating != 0:
@@ -295,7 +355,9 @@ rating = finalratings2[finalfilms2.index(choice)]
 xgenre = finalgenres2[finalfilms2.index(choice)]
 
 # Print out the result:
+print('\n********************')
 if rating == -1.0:
-	print('\n{} -- {:d} -- no rating -- {}\n'.format(choice,year,xgenre))
+	print('{} -- {:d} -- no rating -- {}'.format(choice,year,xgenre))
 else:
-	print('\n{} -- {:d} -- {:.1f}/5 -- {}\n'.format(choice,year,rating,xgenre))
+	print('{} -- {:d} -- {:.1f}/5 -- {}'.format(choice,year,rating,xgenre))
+print('********************\n')

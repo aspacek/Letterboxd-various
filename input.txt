@@ -1,0 +1,12 @@
+
+minyear = 1970
+maxyear = 1975
+
+minrating = 0
+maxrating = 0
+
+dounrated = 0
+
+genre = any
+
+allnew = 1
