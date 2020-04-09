@@ -9,9 +9,9 @@ genre = any
 
 number = 1
 
-actor = none
 director = none
+actor = none
 
 allnew = 0
 newgenres = 0
-newactors = 1
+newactors = 0

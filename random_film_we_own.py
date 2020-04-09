@@ -106,12 +106,12 @@ for i in range(len(keyword)):
 	# number
 	elif keyword[i] == 'number' and equals[i] == '=':
 		number = int(parameter[i])
-	# actor
-	elif keyword[i] == 'actor' and equals[i] == '=':
-		actor = parameter[i]
 	# director
 	elif keyword[i] == 'director' and equals[i] == '=':
 		director = parameter[i]
+	# actor
+	elif keyword[i] == 'actor' and equals[i] == '=':
+		actor = parameter[i]
 	# allnew
 	elif keyword[i] == 'allnew' and equals[i] == '=':
 		allnew = int(parameter[i])
@@ -140,12 +140,12 @@ if 'genre' not in locals():
 if 'number' not in locals():
 	print('\nnumber not found in input file; number = 1 by default.')
 	number = 1
-if 'actor' not in locals():
-	print('\nactor not found in input file; actor = none by default.')
-	actor = 'none'
 if 'director' not in locals():
 	print('\ndirector not found in input file; director = none by default.')
 	director = 'none'
+if 'actor' not in locals():
+	print('\nactor not found in input file; actor = none by default.')
+	actor = 'none'
 if 'allnew' not in locals():
 	print('\nallnew not found in input file; allnew = 0 by default.')
 	allnew = 0
@@ -219,9 +219,11 @@ print('\nNumber of films in collection: '+str(len(films)))
 print('\nGetting genres for all collection films.')
 
 # If newgenres = 0, check for previous film genre output:
+newgenreflag = 0
 if newgenres == 0:
 	genrepath = Path('Data/Genres.csv')
 	if genrepath.exists():
+		newgenreflag = 1
 		# If there is previous output, read it in:
 		films2 = []
 		years2 = []
@@ -240,7 +242,7 @@ genres3 = []
 for i in range(len(films)):
 	# Check if previous info available:
 	genreflag = 0
-	if newgenres == 0:
+	if newgenres == 0 and newgenreflag == 1:
 		if films[i] in films2:
 			genreflag = 1
 			films3 = films3+[films[i]]
@@ -478,10 +480,12 @@ print('\nGetting directors and actors for all remaining films, if requested.')
 
 # Deal with directors or actors, if requested:
 if director != 'none' or actor != 'none' or newactors == 1:
+	newactorflag = 0
 	# If newactors = 0, check for previous film actor output:
 	if newactors == 0:
 		actorpath = Path('Data/Actors.csv')
 		if actorpath.exists():
+			newactorflag = 1
 			# If there is previous output, read it in:
 			films5 = []
 			directors5 = []
@@ -500,7 +504,7 @@ if director != 'none' or actor != 'none' or newactors == 1:
 	for i in range(len(gcutfilms)):
 		# Check if previous info available:
 		actorflag = 0
-		if newactors == 0:
+		if newactors == 0 and newactorflag == 1:
 			if gcutfilms[i] in films5:
 				actorflag = 1
 				films6 = films6+[gcutfilms[i]]
@@ -662,23 +666,39 @@ if dflag == 0 and aflag == 0:
 		if rating[i] == -1.0:
 			print('{} -- {:d} -- no rating -- {}'.format(choice[i],year[i],genre[i]))
 		else:
-			print('{} -- {:d} -- {:.1f}/5 -- {}'.format(choice[i],year[i],rating[i],genre[i]))
+			print('{} -- {:d} -- {:.1f}/5.0 -- {}'.format(choice[i],year[i],rating[i],genre[i]))
 elif dflag == 1 and aflag == 0:
 	for i in range(len(choice)):
 		if rating[i] == -1.0:
 			print('{} -- {:d} -- no rating -- {} -- {}'.format(choice[i],year[i],genre[i],director[i]))
 		else:
-			print('{} -- {:d} -- {:.1f}/5 -- {} -- {}'.format(choice[i],year[i],rating[i],genre[i],director[i]))
+			print('{} -- {:d} -- {:.1f}/5.0 -- {} -- {}'.format(choice[i],year[i],rating[i],genre[i],director[i]))
 elif dflag == 0 and aflag == 1:
 	for i in range(len(choice)):
-		if rating[i] == -1.0:
-			print('{} -- {:d} -- no rating -- {} -- {}'.format(choice[i],year[i],genre[i],actor[i]))
+		actors = actor[i].split(' ')
+		if len(actors) < 5:
+			n = len(actors)
 		else:
-			print('{} -- {:d} -- {:.1f}/5 -- {} -- {}'.format(choice[i],year[i],rating[i],genre[i],actor[i]))
+			n = 5
+		actor5 = ''
+		for j in range(n):
+			actor5 = actor5+actors[j]+' '
+		if rating[i] == -1.0:
+			print('{} -- {:d} -- no rating -- {} -- {}'.format(choice[i],year[i],genre[i],actor5))
+		else:
+			print('{} -- {:d} -- {:.1f}/5.0 -- {} -- {}'.format(choice[i],year[i],rating[i],genre[i],actor5))
 elif dflag == 1 and aflag == 1:
 	for i in range(len(choice)):
-		if rating[i] == -1.0:
-			print('{} -- {:d} -- no rating -- {} -- {} -- {}'.format(choice[i],year[i],genre[i],director[i],actor[i]))
+		actors = actor[i].split(' ')
+		if len(actors) < 5:
+			n = len(actors)
 		else:
-			print('{} -- {:d} -- {:.1f}/5 -- {} -- {} -- {}'.format(choice[i],year[i],rating[i],genre[i],director[i],actor[i]))
+			n = 5
+		actor5 = ''
+		for j in range(n):
+			actor5 = actor5+actors[j]+' '
+		if rating[i] == -1.0:
+			print('{} -- {:d} -- no rating -- {} -- {} -- {}'.format(choice[i],year[i],genre[i],director[i],actor5))
+		else:
+			print('{} -- {:d} -- {:.1f}/5.0 -- {} -- {} -- {}'.format(choice[i],year[i],rating[i],genre[i],director[i],actor5))
 print('********************\n')
