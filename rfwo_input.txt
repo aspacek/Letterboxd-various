@@ -8,6 +8,9 @@ maxrating = 0
 minratingLetterboxd = 0
 maxratingLetterboxd = 0
 
+minpopularity = 0
+maxpopularity = 0
+
 genre = any
 
 number = 1

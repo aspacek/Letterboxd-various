@@ -109,6 +109,12 @@ for i in range(len(keyword)):
 	# maxratingLetterboxd
 	elif keyword[i] == 'maxratingLetterboxd' and equals[i] == '=':
 		maxratingLetterboxd = float(parameter[i])
+	# minpopularity
+	elif keyword[i] == 'minpopularity' and equals[i] == '=':
+		minpopularity = float(parameter[i])
+	# maxpopularity
+	elif keyword[i] == 'maxpopularity' and equals[i] == '=':
+		maxpopularity = float(parameter[i])
 	# genre
 	elif keyword[i] == 'genre' and equals[i] == '=':
 		genre = parameter[i]
@@ -152,6 +158,12 @@ if 'minratingLetterboxd' not in locals():
 if 'maxratingLetterboxd' not in locals():
 	print('\nmaxratingLetterboxd not found in input file; maxratingLetterboxd = 0 by default.')
 	maxratingLetterboxd = 0
+if 'minpopularity' not in locals():
+	print('\nminpopularity not found in input file; minpopularity = 0 by default.')
+	minpopularity = 0
+if 'maxpopularity' not in locals():
+	print('\nmaxpopularity not found in input file; maxpopularity = 0 by default.')
+	maxpopularity = 0
 if 'genre' not in locals():
 	print('\ngenre not found in input file; genre = any by default.')
 	genre = 'any'
@@ -237,6 +249,83 @@ if collectionflag == 0:
 
 # Status update:
 print('\nNumber of films in collection: '+str(len(films)))
+print('\nReading in Amanda\'s and Alex\'s film collection by popularity.')
+
+# If allnew = 0, check for previous film collection popularity output:
+popularityflag = 0
+if allnew == 0:
+	popularitypath = Path('Data/Popularity.csv')
+	if popularitypath.exists():
+		# If there is previous output, read it in:
+		popularityflag = 1
+		films3 = []
+		popularity3 = []
+		with open('Data/Popularity.csv') as csv_file:
+			csv_reader = csv.reader(csv_file, delimiter=',')
+			for row in csv_reader:
+				films3 = films3+[row[0]]
+				popularity3 = popularity3+[row[1]]
+	# Make popularity values floats:
+	popularity3 = [float(item) for item in popularity3]
+# Otherwise, grab info from internet:
+if popularityflag == 0:
+	# The base url of our film collection:
+	url = 'https://letterboxd.com/moogic/list/moogics-dvd-collection/detail/by/popular/'
+	# Grab source code for the first page:
+	r = requests.get(url)
+	source = r.text
+	# Find the number of pages
+	pages = int(getstrings('last','/moogic/list/moogics-dvd-collection/detail/by/popular/page/','/">',source))
+	# Loop through all pages and grab all the film titles:
+	pageflag = 0
+	# Initialize results:
+	films2 = []
+	# Start on page 1, get the films:
+	films2 = films2+getstrings('all','data-film-slug="/film/','/"',source)
+	# Now loop through the rest of the pages:
+	if pageflag == 0:
+		for page in range(pages-1):
+			# Start on page 2:
+			page = str(page + 2)
+			# Grab source code of the page:
+			r = requests.get(url+'page/'+page+'/')
+			source = r.text
+			# Get films and years:
+			films2 = films2+getstrings('all','data-film-slug="/film/','/"',source)
+	# Compute the popularity percentiles:
+	popularity2 = []
+	for i in range(len(films2)):
+		popularity2 = popularity2+[(len(films2)-i)/float(len(films2))*100]
+	# Match original films with popularity values
+	films3 = []
+	popularity3 = []
+	for i in range(len(films2)):
+		flag = 0
+		j = 0
+		while flag == 0 and j < len(films2):
+			if films[i] == films2[j]:
+				flag = 1
+				films3 = films3+[films[i]]
+				popularity3 = popularity3+[popularity2[j]]
+				del films2[j]
+				del popularity2[j]
+			j = j+1
+		if flag == 0:
+			sys.exit('ERROR - in function "MAIN" - There is a popularity value for an invalid film')
+	# Make popularity values floats:
+	popularity3 = [float(item) for item in popularity3]
+	# Make sure the lengths match:
+	if len(films) != len(popularity3):
+		sys.exit('ERROR - in function "MAIN" - Number of films does not match number of popularity values')
+	if films != films3:
+		sys.exit('ERROR - in function "MAIN" - Number of popularity films does not match number of films')
+	# Write out the data:
+	with open('Data/Popularity.csv', mode='w') as outfile:
+		csvwriter = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+		for i in range(len(films3)):
+			csvwriter.writerow([films3[i],popularity3[i]])
+
+# Status update:
 print('\nGetting genres for all collection films.')
 
 # If newgenres = 0, check for previous film genre output:
@@ -246,29 +335,29 @@ if newgenres == 0:
 	if genrepath.exists():
 		newgenreflag = 1
 		# If there is previous output, read it in:
-		films2 = []
-		years2 = []
-		genres2 = []
+		films4 = []
+		years4 = []
+		genres4 = []
 		with open('Data/Genres.csv') as csv_file:
 			csv_reader = csv.reader(csv_file, delimiter=',')
 			for row in csv_reader:
-				films2 = films2+[row[0]]
-				years2 = years2+[row[1]]
-				genres2 = genres2+[row[2]]
+				films4 = films4+[row[0]]
+				years4 = years4+[row[1]]
+				genres4 = genres4+[row[2]]
 # Go through all collection films, and either
 # grab info from internet, or use previous info if available:
-films3 = []
-years3 = []
-genres3 = []
+films5 = []
+years5 = []
+genres5 = []
 for i in range(len(films)):
 	# Check if previous info available:
 	genreflag = 0
 	if newgenres == 0 and newgenreflag == 1:
-		if films[i] in films2:
+		if films[i] in films4:
 			genreflag = 1
-			films3 = films3+[films[i]]
-			years3 = years3+[years[i]]
-			genres3 = genres3+[genres2[films2.index(films[i])]]
+			films5 = films5+[films[i]]
+			years5 = years5+[years[i]]
+			genres5 = genres5+[genres4[films4.index(films[i])]]
 	# If previous info not available, get it from the internet:
 	if genreflag == 0:
 		url = 'https://letterboxd.com/film/'+films[i]+'/genres/'
@@ -283,20 +372,20 @@ for i in range(len(films)):
 			genrestring = genrestring+genres[j]
 			if j < len(genres)-1:
 				genrestring = genrestring+' '
-		films3 = films3+[films[i]]
-		years3 = years3+[years[i]]
-		genres3 = genres3+[genrestring]
+		films5 = films5+[films[i]]
+		years5 = years5+[years[i]]
+		genres5 = genres5+[genrestring]
 # Make sure the lengths match:
-if len(films3) != len(genres3):
+if len(films5) != len(genres5):
 	sys.exit('ERROR - in function "MAIN" - Number of films does not match number of genres')
-if len(films) != len(films3):
+if len(films) != len(films5):
 	sys.exit('ERROR - in function "MAIN" - Number of films with genres does not match number of films')
 # Write out the data:
 if newgenreflag == 0:
 	with open('Data/Genres.csv', mode='w') as outfile:
 		csvwriter = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-		for i in range(len(films3)):
-			csvwriter.writerow([films3[i],years3[i],genres3[i]])
+		for i in range(len(films5)):
+			csvwriter.writerow([films5[i],years5[i],genres5[i]])
 
 # Status update:
 print('\nGetting all of Alex\'s film ratings.')
@@ -308,15 +397,15 @@ if allnew == 0:
 	if ratingspath.exists():
 		# If there is previous output, read it in:
 		ratingsflag = 1
-		films4 = []
-		ratings4 = []
+		films6 = []
+		ratings6 = []
 		with open('Data/Ratings.csv') as csv_file:
 			csv_reader = csv.reader(csv_file, delimiter=',')
 			for row in csv_reader:
-				films4 = films4+[row[0]]
-				ratings4 = ratings4+[row[1]]
+				films6 = films6+[row[0]]
+				ratings6 = ratings6+[row[1]]
 	# Make ratings values integers:
-	ratings4 = [int(item) for item in ratings4]
+	ratings6 = [int(item) for item in ratings6]
 # Otherwise, grab info from internet:
 if ratingsflag == 0:
 	# Grab all film ratings:
@@ -329,12 +418,12 @@ if ratingsflag == 0:
 	pages = int(getstrings('last','/moogic/films/ratings/page/','/"',source))
 	# Loop through all pages and grab all the film titles:
 	# Initialize results:
-	films4 = []
-	ratings4 = []
+	films6 = []
+	ratings6 = []
 	# Start on page 1, get the films:
-	films4 = films4+getstrings('all','data-film-slug="/film/','/"',source)
+	films6 = films6+getstrings('all','data-film-slug="/film/','/"',source)
 	# Do the same for ratings:
-	ratings4 = ratings4+getstrings('all','rating rated-','">',source)
+	ratings6 = ratings6+getstrings('all','rating rated-','">',source)
 	# Now loop through the rest of the pages:
 	for page in range(pages-1):
 		# Start on page 2:
@@ -343,22 +432,22 @@ if ratingsflag == 0:
 		r = requests.get(url+'page/'+page+'/')
 		source = r.text
 		# Get films:
-		films4 = films4+getstrings('all','data-film-slug="/film/','/"',source)
+		films6 = films6+getstrings('all','data-film-slug="/film/','/"',source)
 		# Get ratings:
-		ratings4 = ratings4+getstrings('all','rating rated-','">',source)
+		ratings6 = ratings6+getstrings('all','rating rated-','">',source)
 	# Make ratings values integers:
-	ratings4 = [int(item) for item in ratings4]
+	ratings6 = [int(item) for item in ratings6]
 	# Make sure the lengths match:
-	if len(films4) != len(ratings4):
+	if len(films6) != len(ratings6):
 		sys.exit('ERROR - in function "MAIN" - Number of films does not match number of ratings')
 	# Write out the data:
 	with open('Data/Ratings.csv', mode='w') as outfile:
 		csvwriter = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-		for i in range(len(films4)):
-			csvwriter.writerow([films4[i],ratings4[i]])
+		for i in range(len(films6)):
+			csvwriter.writerow([films6[i],ratings6[i]])
 
 # Status update:
-print('\nNumber of total ratings: '+str(len(films4)))
+print('\nNumber of total ratings: '+str(len(films6)))
 print('\nGetting average Letterboxd ratings for all collection films.')
 
 # If newratingsLetterboxd = 0, check for previous Letterboxd rating output:
@@ -368,53 +457,52 @@ if newratingsLetterboxd == 0:
 	if Lratingpath.exists():
 		newLratingflag = 1
 		# If there is previous output, read it in:
-		films5 = []
-		Lratings5 = []
+		films7 = []
+		Lratings7 = []
 		with open('Data/RatingsLetterboxd.csv') as csv_file:
 			csv_reader = csv.reader(csv_file, delimiter=',')
 			for row in csv_reader:
-				films5 = films5+[row[0]]
-				Lratings5 = Lratings5+[row[1]]
+				films7 = films7+[row[0]]
+				Lratings7 = Lratings7+[row[1]]
 # Go through all collection films, and either
 # grab info from internet, or use previous info if available:
-films6 = []
-Lratings6 = []
-for i in range(len(films3)):
+films8 = []
+Lratings8 = []
+for i in range(len(films)):
 	# Check if previous info available:
 	Lratingflag = 0
 	if newratingsLetterboxd == 0 and newLratingflag == 1:
-		if films3[i] in films5:
+		if films[i] in films7:
 			Lratingflag = 1
-			films6 = films6+[films[i]]
-			Lratings6 = Lratings6+[Lratings5[films5.index(films3[i])]]
+			films8 = films8+[films[i]]
+			Lratings8 = Lratings8+[Lratings7[films7.index(films[i])]]
 	# If previous info not available, get it from the internet:
 	if Lratingflag == 0:
-		url = 'https://letterboxd.com/film/'+films3[i]+'/'
+		url = 'https://letterboxd.com/film/'+films[i]+'/'
 		# Grab source code for genre page:
 		r = requests.get(url)
 		source = r.text
-		# Find the genres:
-		print(films3[i])
+		# Find the Letterboxd ratings:
 		Lrating = getstrings('first','"ratingValue":',',"',source)
 		if Lrating == '':
 			Lrating = -1.0
 		else:
 			Lrating = float(Lrating)
-		films6 = films6+[films3[i]]
-		Lratings6 = Lratings6+[Lrating]
+		films8 = films8+[films[i]]
+		Lratings8 = Lratings8+[Lrating]
 # Make Letterboxd ratings values floats:
-Lratings6 = [float(item) for item in Lratings6]
+Lratings8 = [float(item) for item in Lratings8]
 # Make sure the lengths match:
-if len(films6) != len(Lratings6):
+if len(films8) != len(Lratings8):
 	sys.exit('ERROR - in function "MAIN" - Number of films does not match number of Letterboxd ratings')
-if len(films3) != len(films6):
+if len(films) != len(films8):
 	sys.exit('ERROR - in function "MAIN" - Number of films with Letterboxd ratings does not match number of films')
 # Write out the data:
 if newLratingflag == 0:
 	with open('Data/RatingsLetterboxd.csv', mode='w') as outfile:
 		csvwriter = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-		for i in range(len(films6)):
-			csvwriter.writerow([films6[i],Lratings6[i]])
+		for i in range(len(films8)):
+			csvwriter.writerow([films8[i],Lratings8[i]])
 
 # Status update:
 print('\nMatching film collection with ratings.')
@@ -423,30 +511,33 @@ print('\nMatching film collection with ratings.')
 ratingscount = 0
 newfilms = []
 newyears = []
+newpopularity = []
 newgenres = []
 newratings = []
 newLratings = []
-for i in range(len(films3)):
+for i in range(len(films)):
 	flag = 0
 	j = 0
-	while flag == 0 and j < len(films4):
-		if films3[i] == films4[j]:
+	while flag == 0 and j < len(films6):
+		if films[i] == films6[j]:
 			flag = 1
-			newfilms = newfilms+[films3[i]]
-			newyears = newyears+[years3[i]]
-			newgenres = newgenres+[genres3[i]]
-			newratings = newratings+[ratings4[j]/2.0]
-			newLratings = newLratings+[Lratings6[i]]
-			del films4[j]
-			del ratings4[j]
+			newfilms = newfilms+[films[i]]
+			newyears = newyears+[years[i]]
+			newpopularity = newpopularity+[popularity3[i]]
+			newgenres = newgenres+[genres5[i]]
+			newratings = newratings+[ratings6[j]/2.0]
+			newLratings = newLratings+[Lratings8[i]]
+			del films6[j]
+			del ratings6[j]
 			ratingscount = ratingscount+1
 		j = j+1
 	if flag == 0:
-		newfilms = newfilms+[films3[i]]
-		newyears = newyears+[years3[i]]
-		newgenres = newgenres+[genres3[i]]
+		newfilms = newfilms+[films[i]]
+		newyears = newyears+[years[i]]
+		newpopularity = newpopularity+[popularity3[i]]
+		newgenres = newgenres+[genres5[i]]
 		newratings = newratings+[-1.0]
-		newLratings = newLratings+[Lratings6[i]]
+		newLratings = newLratings+[Lratings8[i]]
 
 # Status update:
 print('\nNumber of collection that has been rated: '+str(ratingscount))
@@ -455,6 +546,7 @@ print('\nLimiting years, if requested.')
 # Limit years:
 ycutfilms = []
 ycutyears = []
+ycutpopularity = []
 ycutgenres = []
 ycutratings = []
 ycutLratings = []
@@ -465,12 +557,14 @@ if minyear != 0 or maxyear != 0:
 		if newyears[i] >= minyear and newyears[i] <= maxyear:
 			ycutfilms = ycutfilms+[newfilms[i]]
 			ycutyears = ycutyears+[newyears[i]]
+			ycutpopularity = ycutpopularity+[newpopularity[i]]
 			ycutgenres = ycutgenres+[newgenres[i]]
 			ycutratings = ycutratings+[newratings[i]]
 			ycutLratings = ycutLratings+[newLratings[i]]
 else:
 	ycutfilms = [item for item in newfilms]
 	ycutyears = [item for item in newyears]
+	ycutpopularity = [item for item in newpopularity]
 	ycutgenres = [item for item in newgenres]
 	ycutratings = [item for item in newratings]
 	ycutLratings = [item for item in newLratings]
@@ -484,6 +578,7 @@ print('\nLimiting ratings, if requested.')
 # Limit ratings:
 rcutfilms = []
 rcutyears = []
+rcutpopularity = []
 rcutgenres = []
 rcutratings = []
 rcutLratings = []
@@ -494,6 +589,7 @@ if minrating != 0 or maxrating != 0:
 		if ycutratings[i] >= minrating and ycutratings[i] <= maxrating:
 			rcutfilms = rcutfilms+[ycutfilms[i]]
 			rcutyears = rcutyears+[ycutyears[i]]
+			rcutpopularity = rcutpopularity+[ycutpopularity[i]]
 			rcutgenres = rcutgenres+[ycutgenres[i]]
 			rcutratings = rcutratings+[ycutratings[i]]
 			rcutLratings = rcutLratings+[ycutLratings[i]]
@@ -503,6 +599,7 @@ if minrating != 0 or maxrating != 0:
 else:
 	rcutfilms = [item for item in ycutfilms]
 	rcutyears = [item for item in ycutyears]
+	rcutpopularity = [item for item in ycutpopularity]
 	rcutgenres = [item for item in ycutgenres]
 	rcutratings = [item for item in ycutratings]
 	rcutLratings = [item for item in ycutLratings]
@@ -514,6 +611,7 @@ print('\nLimiting Letterboxd ratings, if requested.')
 # Limit Letterboxd ratings:
 Lcutfilms = []
 Lcutyears = []
+Lcutpopularity = []
 Lcutgenres = []
 Lcutratings = []
 LcutLratings = []
@@ -524,6 +622,7 @@ if minratingLetterboxd != 0 or maxratingLetterboxd != 0:
 		if rcutLratings[i] >= minratingLetterboxd and rcutLratings[i] <= maxratingLetterboxd:
 			Lcutfilms = Lcutfilms+[rcutfilms[i]]
 			Lcutyears = Lcutyears+[rcutyears[i]]
+			Lcutpopularity = Lcutpopularity+[rcutpopularity[i]]
 			Lcutgenres = Lcutgenres+[rcutgenres[i]]
 			Lcutratings = Lcutratings+[rcutratings[i]]
 			LcutLratings = LcutLratings+[rcutLratings[i]]
@@ -533,6 +632,7 @@ if minratingLetterboxd != 0 or maxratingLetterboxd != 0:
 else:
 	Lcutfilms = [item for item in rcutfilms]
 	Lcutyears = [item for item in rcutyears]
+	Lcutpopularity = [item for item in rcutpopularity]
 	Lcutgenres = [item for item in rcutgenres]
 	Lcutratings = [item for item in rcutratings]
 	LcutLratings = [item for item in rcutLratings]
@@ -544,6 +644,7 @@ print('\nLimiting genres, if requested.')
 # Limit genres:
 gcutfilms = []
 gcutyears = []
+gcutpopularity = []
 gcutgenres = []
 gcutratings = []
 gcutLratings = []
@@ -556,6 +657,7 @@ if genre != 'any':
 			if genre == genres[j]:
 				gcutfilms = gcutfilms+[Lcutfilms[i]]
 				gcutyears = gcutyears+[Lcutyears[i]]
+				gcutpopularity = gcutpopularity+[Lcutpopularity[i]]
 				gcutgenres = gcutgenres+[Lcutgenres[i]]
 				gcutratings = gcutratings+[Lcutratings[i]]
 				gcutLratings = gcutLratings+[LcutLratings[i]]
@@ -567,6 +669,7 @@ if genre != 'any':
 				if flag1 == 1 and flag2 == 1:
 					gcutfilms = gcutfilms+[Lcutfilms[i]]
 					gcutyears = gcutyears+[Lcutyears[i]]
+					gcutpopularity = gcutpopularity+[Lcutpopularity[i]]
 					gcutgenres = gcutgenres+[Lcutgenres[i]]
 					gcutratings = gcutratings+[Lcutratings[i]]
 					gcutLratings = gcutLratings+[LcutLratings[i]]
@@ -578,6 +681,7 @@ if genre != 'any':
 				if flag1 == 1 and flag2 == 1:
 					gcutfilms = gcutfilms+[Lcutfilms[i]]
 					gcutyears = gcutyears+[Lcutyears[i]]
+					gcutpopularity = gcutpopularity+[Lcutpopularity[i]]
 					gcutgenres = gcutgenres+[Lcutgenres[i]]
 					gcutratings = gcutratings+[Lcutratings[i]]
 					gcutLratings = gcutLratings+[LcutLratings[i]]
@@ -589,6 +693,7 @@ if genre != 'any':
 				if flag1 == 1 and flag2 == 1:
 					gcutfilms = gcutfilms+[Lcutfilms[i]]
 					gcutyears = gcutyears+[Lcutyears[i]]
+					gcutpopularity = gcutpopularity+[Lcutpopularity[i]]
 					gcutgenres = gcutgenres+[Lcutgenres[i]]
 					gcutratings = gcutratings+[Lcutratings[i]]
 					gcutLratings = gcutLratings+[LcutLratings[i]]
@@ -596,6 +701,7 @@ if genre != 'any':
 else:
 	gcutfilms = [item for item in Lcutfilms]
 	gcutyears = [item for item in Lcutyears]
+	gcutpopularity = [item for item in Lcutpopularity]
 	gcutgenres = [item for item in Lcutgenres]
 	gcutratings = [item for item in Lcutratings]
 	gcutLratings = [item for item in LcutLratings]
@@ -613,29 +719,29 @@ if director != 'none' or actor != 'none' or newactors == 1:
 		if actorpath.exists():
 			newactorflag = 1
 			# If there is previous output, read it in:
-			films5 = []
-			directors5 = []
-			actors5 = []
+			films9 = []
+			directors9 = []
+			actors9 = []
 			with open('Data/Actors.csv') as csv_file:
 				csv_reader = csv.reader(csv_file, delimiter=',')
 				for row in csv_reader:
-					films5 = films5+[row[0]]
-					directors5 = directors5+[row[1]]
-					actors5 = actors5+[row[2]]
+					films9 = films9+[row[0]]
+					directors9 = directors9+[row[1]]
+					actors9 = actors9+[row[2]]
 	# Go through all collection films, and either
 	# grab info from internet, or use previous info if available:
-	films6 = []
-	directors6 = []
-	actors6 = []
+	films10 = []
+	directors10 = []
+	actors10 = []
 	for i in range(len(gcutfilms)):
 		# Check if previous info available:
 		actorflag = 0
 		if newactors == 0 and newactorflag == 1:
-			if gcutfilms[i] in films5:
+			if gcutfilms[i] in films9:
 				actorflag = 1
-				films6 = films6+[gcutfilms[i]]
-				directors6 = directors6+[directors5[films5.index(gcutfilms[i])]]
-				actors6 = actors6+[actors5[films5.index(gcutfilms[i])]]
+				films10 = films10+[gcutfilms[i]]
+				directors10 = directors10+[directors9[films9.index(gcutfilms[i])]]
+				actors10 = actors10+[actors9[films9.index(gcutfilms[i])]]
 		# If previous info not available, get it from the internet:
 		if actorflag == 0:
 			url = 'https://letterboxd.com/film/'+gcutfilms[i]+'/'
@@ -660,25 +766,25 @@ if director != 'none' or actor != 'none' or newactors == 1:
 				actorstring = actorstring+actors[j]
 				if j < len(actors)-1:
 					actorstring = actorstring+' '
-			films6 = films6+[gcutfilms[i]]
-			directors6 = directors6+[directorstring]
-			actors6 = actors6+[actorstring]
+			films10 = films10+[gcutfilms[i]]
+			directors10 = directors10+[directorstring]
+			actors10 = actors10+[actorstring]
 	# Make sure the lengths match:
-	if len(films6) != len(actors6):
+	if len(films10) != len(actors10):
 		sys.exit('ERROR - in function "MAIN" - Number of films does not match number of actors')
 	# Make sure films6 is identical to gcutfilms:
-	if films6 != gcutfilms:
+	if films10 != gcutfilms:
 		sys.exit('ERROR - in function "MAIN" - Director/actor film array not the same as the previous film array')
 	# Write out the data:
 	if newactors == 1:
 		with open('Data/Actors.csv', mode='w') as outfile:
 			csvwriter = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-			for i in range(len(films6)):
-				csvwriter.writerow([films6[i],directors6[i],actors6[i]])
+			for i in range(len(films10)):
+				csvwriter.writerow([films10[i],directors10[i],actors10[i]])
 # Otherwise just make them empty arrays:
 else:
-	directors6 = []
-	actors6 = []
+	directors10 = []
+	actors10 = []
 
 # Status update:
 print('\nLimiting directors, if requested.')
@@ -686,6 +792,7 @@ print('\nLimiting directors, if requested.')
 # Limit directors:
 dcutfilms = []
 dcutyears = []
+dcutpopularity = []
 dcutgenres = []
 dcutratings = []
 dcutLratings = []
@@ -693,25 +800,27 @@ dcutdirectors = []
 dcutactors = []
 if director != 'none':
 	for i in range(len(gcutfilms)):
-		directors = directors6[i].split(' ')
+		directors = directors10[i].split(' ')
 		for j in range(len(directors)):
 			if director == directors[j]:
 				dcutfilms = dcutfilms+[gcutfilms[i]]
 				dcutyears = dcutyears+[gcutyears[i]]
+				dcutpopularity = dcutpopularity+[gcutpopularity[i]]
 				dcutgenres = dcutgenres+[gcutgenres[i]]
 				dcutratings = dcutratings+[gcutratings[i]]
 				dcutLratings = dcutLratings+[gcutLratings[i]]
-				dcutdirectors = dcutdirectors+[directors6[i]]
-				dcutactors = dcutactors+[actors6[i]]
+				dcutdirectors = dcutdirectors+[directors10[i]]
+				dcutactors = dcutactors+[actors10[i]]
 # Otherwise, just keep all of the films:
 else:
 	dcutfilms = [item for item in gcutfilms]
 	dcutyears = [item for item in gcutyears]
+	dcutpopularity = [item for item in gcutpopularity]
 	dcutgenres = [item for item in gcutgenres]
 	dcutratings = [item for item in gcutratings]
 	dcutLratings = [item for item in gcutLratings]
-	dcutdirectors = [item for item in directors6]
-	dcutactors = [item for item in actors6]
+	dcutdirectors = [item for item in directors10]
+	dcutactors = [item for item in actors10]
 
 # Status update:
 print('\nNumber fitting director criterion: '+str(len(dcutfilms)))
@@ -720,6 +829,7 @@ print('\nLimiting actors, if requested.')
 # Limit actors:
 acutfilms = []
 acutyears = []
+acutpopularity = []
 acutgenres = []
 acutratings = []
 acutLratings = []
@@ -732,6 +842,7 @@ if actor != 'none':
 			if actor == actors[j]:
 				acutfilms = acutfilms+[dcutfilms[i]]
 				acutyears = acutyears+[dcutyears[i]]
+				acutpopularity = acutpopularity+[dcutpopularity[i]]
 				acutgenres = acutgenres+[dcutgenres[i]]
 				acutratings = acutratings+[dcutratings[i]]
 				acutLratings = acutLratings+[dcutLratings[i]]
@@ -741,24 +852,67 @@ if actor != 'none':
 else:
 	acutfilms = [item for item in dcutfilms]
 	acutyears = [item for item in dcutyears]
+	acutpopularity = [item for item in dcutpopularity]
 	acutgenres = [item for item in dcutgenres]
 	acutratings = [item for item in dcutratings]
 	acutLratings = [item for item in dcutLratings]
 	acutdirectors = [item for item in dcutdirectors]
 	acutactors = [item for item in dcutactors]
 
-# Denote the final result arrays:
-finalfilms = [item for item in acutfilms]
-finalyears = [item for item in acutyears]
-finalgenres = [item for item in acutgenres]
-finalratings = [item for item in acutratings]
-finalLratings = [item for item in acutLratings]
-finaldirectors = [item for item in acutdirectors]
-finalactors = [item for item in acutactors]
-
 # Status update:
 print('\nNumber fitting actor criterion: '+str(len(acutfilms)))
+print('\nLimiting popularity, if requested.')
+
+# Limit popularity:
+pcutfilms = []
+pcutyears = []
+pcutpopularity = []
+pcutgenres = []
+pcutratings = []
+pcutLratings = []
+pcutdirectors = []
+pcutactors = []
+if minpopularity != 0 or maxpopularity != 0:
+	if maxpopularity == 0:
+		maxpopularity = 100
+	for i in range(len(acutfilms)):
+		if acutpopularity[i] >= minpopularity and rcutpopularity[i] <= maxpopularity:
+			pcutfilms = pcutfilms+[acutfilms[i]]
+			pcutyears = pcutyears+[acutyears[i]]
+			pcutpopularity = pcutpopularity+[acutpopularity[i]]
+			pcutgenres = pcutgenres+[acutgenres[i]]
+			pcutratings = pcutratings+[acutratings[i]]
+			pcutLratings = pcutLratings+[acutLratings[i]]
+			if director != 'none':
+				pcutdirectors = pcutdirectors+[acutdirectors[i]]
+			if actor != 'none':
+				pcutactors = pcutactors+[acutactors[i]]
+	if len(pcutfilms) == 0:
+		sys.exit('ERROR - in function "MAIN" - No films in the popularity range given')
+# Otherwise, just keep all of the films:
+else:
+	pcutfilms = [item for item in acutfilms]
+	pcutyears = [item for item in acutyears]
+	pcutpopularity = [item for item in acutpopularity]
+	pcutgenres = [item for item in acutgenres]
+	pcutratings = [item for item in acutratings]
+	pcutLratings = [item for item in acutLratings]
+	pcutdirectors = [item for item in acutdirectors]
+	pcutactors = [item for item in acutactors]
+
+# Status update:
+print('\nNumber fitting popularity criterion: '+str(len(pcutfilms)))
 print('\nRequested films obtained. Choosing one randomly.')
+
+# Denote the final result arrays:
+finalfilms = [item for item in pcutfilms]
+finalyears = [item for item in pcutyears]
+finalpopularity = [item for item in pcutpopularity]
+finalgenres = [item for item in pcutgenres]
+finalratings = [item for item in pcutratings]
+finalLratings = [item for item in pcutLratings]
+finaldirectors = [item for item in pcutdirectors]
+finalactors = [item for item in pcutactors]
 
 # Grab a random "number" of films:
 random.seed()
@@ -766,6 +920,7 @@ if len(finalfilms) < number:
 	number = len(finalfilms)
 choice = []
 year = []
+popularity = []
 genre = []
 rating = []
 Lrating = []
@@ -786,6 +941,7 @@ for i in range(number):
 	choice = choice+[thischoice]
 	# Get the year, genre, rating, directors, actors:
 	year = year+[finalyears[finalfilms.index(thischoice)]]
+	popularity = popularity+[finalpopularity[finalfilms.index(thischoice)]]
 	genre = genre+[finalgenres[finalfilms.index(thischoice)]]
 	rating = rating+[finalratings[finalfilms.index(thischoice)]]
 	Lrating = Lrating+[finalLratings[finalfilms.index(thischoice)]]
@@ -799,15 +955,15 @@ print('\n********************')
 if dflag == 0 and aflag == 0:
 	for i in range(len(choice)):
 		if rating[i] == -1.0:
-			print('{} -- {:d} -- no rating -- {:.2f}/5.00 -- {}'.format(choice[i],year[i],Lrating[i],genre[i]))
+			print('{} -- {:d} -- no rating -- {:.2f}/5.00 -- {:.1f} -- {}'.format(choice[i],year[i],Lrating[i],popularity[i],genre[i]))
 		else:
-			print('{} -- {:d} -- {:.1f}/5.0 -- {:.2f}/5.00 -- {}'.format(choice[i],year[i],rating[i],Lrating[i],genre[i]))
+			print('{} -- {:d} -- {:.1f}/5.0 -- {:.2f}/5.00 -- {:.1f} -- {}'.format(choice[i],year[i],rating[i],Lrating[i],popularity[i],genre[i]))
 elif dflag == 1 and aflag == 0:
 	for i in range(len(choice)):
 		if rating[i] == -1.0:
-			print('{} -- {:d} -- no rating -- {:.2f}/5.00 -- {} -- {}'.format(choice[i],year[i],Lrating[i],genre[i],director[i]))
+			print('{} -- {:d} -- no rating -- {:.2f}/5.00 -- {:.1f} -- {} -- {}'.format(choice[i],year[i],Lrating[i],popularity[i],genre[i],director[i]))
 		else:
-			print('{} -- {:d} -- {:.1f}/5.0 -- {:.2f}/5.00 -- {} -- {}'.format(choice[i],year[i],rating[i],Lrating[i],genre[i],director[i]))
+			print('{} -- {:d} -- {:.1f}/5.0 -- {:.2f}/5.00 -- {:.1f} -- {} -- {}'.format(choice[i],year[i],rating[i],Lrating[i],popularity[i],genre[i],director[i]))
 elif dflag == 0 and aflag == 1:
 	for i in range(len(choice)):
 		actors = actor[i].split(' ')
@@ -819,9 +975,9 @@ elif dflag == 0 and aflag == 1:
 		for j in range(n):
 			actor5 = actor5+actors[j]+' '
 		if rating[i] == -1.0:
-			print('{} -- {:d} -- no rating -- {:.2f}/5.00 -- {} -- {}'.format(choice[i],year[i],Lrating[i],genre[i],actor5))
+			print('{} -- {:d} -- no rating -- {:.2f}/5.00 -- {:.1f} -- {} -- {}'.format(choice[i],year[i],Lrating[i],popularity[i],genre[i],actor5))
 		else:
-			print('{} -- {:d} -- {:.1f}/5.0 -- {:.2f}/5.00 -- {} -- {}'.format(choice[i],year[i],rating[i],Lrating[i],genre[i],actor5))
+			print('{} -- {:d} -- {:.1f}/5.0 -- {:.2f}/5.00 -- {:.1f} -- {} -- {}'.format(choice[i],year[i],rating[i],Lrating[i],popularity[i],genre[i],actor5))
 elif dflag == 1 and aflag == 1:
 	for i in range(len(choice)):
 		actors = actor[i].split(' ')
@@ -833,7 +989,7 @@ elif dflag == 1 and aflag == 1:
 		for j in range(n):
 			actor5 = actor5+actors[j]+' '
 		if rating[i] == -1.0:
-			print('{} -- {:d} -- no rating -- {:.2f}/5.00 -- {} -- {} -- {}'.format(choice[i],year[i],Lrating[i],genre[i],director[i],actor5))
+			print('{} -- {:d} -- no rating -- {:.2f}/5.00 -- {:.1f} -- {} -- {} -- {}'.format(choice[i],year[i],Lrating[i],popularity[i],genre[i],director[i],actor5))
 		else:
-			print('{} -- {:d} -- {:.1f}/5.0 -- {:.2f}/5.00 -- {} -- {} -- {}'.format(choice[i],year[i],rating[i],Lrating[i],genre[i],director[i],actor5))
+			print('{} -- {:d} -- {:.1f}/5.0 -- {:.2f}/5.00 -- {:.1f} -- {} -- {} -- {}'.format(choice[i],year[i],rating[i],Lrating[i],popularity[i],genre[i],director[i],actor5))
 print('********************\n')
