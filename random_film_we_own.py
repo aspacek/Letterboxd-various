@@ -103,14 +103,24 @@ for i in range(len(keyword)):
 	# genre
 	elif keyword[i] == 'genre' and equals[i] == '=':
 		genre = parameter[i]
+	# number
+	elif keyword[i] == 'number' and equals[i] == '=':
+		number = int(parameter[i])
+	# actor
+	elif keyword[i] == 'actor' and equals[i] == '=':
+		actor = parameter[i]
+	# director
+	elif keyword[i] == 'director' and equals[i] == '=':
+		director = parameter[i]
 	# allnew
 	elif keyword[i] == 'allnew' and equals[i] == '=':
 		allnew = int(parameter[i])
 	# newgenres
 	elif keyword[i] == 'newgenres' and equals[i] == '=':
 		newgenres = int(parameter[i])
-	elif keyword[i] == 'number' and equals[i] == '=':
-		number = int(parameter[i])
+	# newactors
+	elif keyword[i] == 'newactors' and equals[i] == '=':
+		newactors = int(parameter[i])
 # Defaults, if parameters not found:
 if 'minyear' not in locals():
 	print('\nminyear not found in input file; minyear = 0 by default.')
@@ -127,15 +137,24 @@ if 'maxrating' not in locals():
 if 'genre' not in locals():
 	print('\ngenre not found in input file; genre = any by default.')
 	genre = 'any'
+if 'number' not in locals():
+	print('\nnumber not found in input file; number = 1 by default.')
+	number = 1
+if 'actor' not in locals():
+	print('\nactor not found in input file; actor = none by default.')
+	actor = 'none'
+if 'director' not in locals():
+	print('\ndirector not found in input file; director = none by default.')
+	director = 'none'
 if 'allnew' not in locals():
 	print('\nallnew not found in input file; allnew = 0 by default.')
 	allnew = 0
 if 'newgenres' not in locals():
 	print('\nnewgenres not found in input file; newgenres = 0 by default.')
 	newgenres = 0
-if 'number' not in locals():
-	print('\nnumber not found in input file; number = 1 by default.')
-	number = 1
+if 'newactors' not in locals():
+	print('\nnewactors not found in input file; newactors = 0 by default.')
+	newactors = 0
 
 # Status update:
 print('\nReading in Amanda\'s and Alex\'s film collection.')
@@ -453,14 +472,155 @@ else:
 	gcutgenres = [item for item in rcutgenres]
 	gcutratings = [item for item in rcutratings]
 
-# Denote the final result arrays:
-finalfilms = [item for item in gcutfilms]
-finalyears = [item for item in gcutyears]
-finalgenres = [item for item in gcutgenres]
-finalratings = [item for item in gcutratings]
-
 # Status update:
 print('\nNumber fitting genre criterion: '+str(len(gcutfilms)))
+print('\nGetting directors and actors for all remaining films, if requested.')
+
+# Deal with directors or actors, if requested:
+if director != 'none' or actor != 'none' or newactors == 1:
+	# If newactors = 0, check for previous film actor output:
+	if newactors == 0:
+		actorpath = Path('Data/Actors.csv')
+		if actorpath.exists():
+			# If there is previous output, read it in:
+			films5 = []
+			directors5 = []
+			actors5 = []
+			with open('Data/Actors.csv') as csv_file:
+				csv_reader = csv.reader(csv_file, delimiter=',')
+				for row in csv_reader:
+					films5 = films5+[row[0]]
+					directors5 = directors5+[row[1]]
+					actors5 = actors5+[row[2]]
+	# Go through all collection films, and either
+	# grab info from internet, or use previous info if available:
+	films6 = []
+	directors6 = []
+	actors6 = []
+	for i in range(len(gcutfilms)):
+		# Check if previous info available:
+		actorflag = 0
+		if newactors == 0:
+			if gcutfilms[i] in films5:
+				actorflag = 1
+				films6 = films6+[gcutfilms[i]]
+				directors6 = directors6+[directors5[films5.index(gcutfilms[i])]]
+				actors6 = actors6+[actors5[films5.index(gcutfilms[i])]]
+		# If previous info not available, get it from the internet:
+		if actorflag == 0:
+			url = 'https://letterboxd.com/film/'+gcutfilms[i]+'/'
+			# Grab source code for genre page:
+			r = requests.get(url)
+			source = r.text
+			# Find the directors:
+			directors1 = getstrings('all','Directed by <a href="/director/','/">',source)
+			directors2 = getstrings('all',', <a href="/director/','/">',source)
+			directors = directors1+directors2
+			flag = 0
+			directorstring = ''
+			for j in range(len(directors)):
+				directorstring = directorstring+directors[j]
+				if j < len(directors)-1:
+					directorstring = directorstring+' '
+			# Find the actors:
+			actors = getstrings('all','href="/actor/','/" class',source)
+			flag = 0
+			actorstring = ''
+			for j in range(len(actors)):
+				actorstring = actorstring+actors[j]
+				if j < len(actors)-1:
+					actorstring = actorstring+' '
+			films6 = films6+[gcutfilms[i]]
+			directors6 = directors6+[directorstring]
+			actors6 = actors6+[actorstring]
+	# Make sure the lengths match:
+	if len(films6) != len(actors6):
+		sys.exit('ERROR - in function "MAIN" - Number of films does not match number of actors')
+	# Make sure films6 is identical to gcutfilms:
+	if films6 != gcutfilms:
+		sys.exit('ERROR - in function "MAIN" - Director/actor film array not the same as the previous film array')
+	# Write out the data:
+	if newactors == 1:
+		with open('Data/Actors.csv', mode='w') as outfile:
+			csvwriter = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+			for i in range(len(films6)):
+				csvwriter.writerow([films6[i],directors6[i],actors6[i]])
+# Otherwise just make them empty arrays:
+else:
+	directors6 = []
+	actors6 = []
+
+# Status update:
+print('\nLimiting directors, if requested.')
+
+# Limit directors:
+dcutfilms = []
+dcutyears = []
+dcutgenres = []
+dcutratings = []
+dcutdirectors = []
+dcutactors = []
+if director != 'none':
+	for i in range(len(gcutfilms)):
+		directors = directors6[i].split(' ')
+		for j in range(len(directors)):
+			if director == directors[j]:
+				dcutfilms = dcutfilms+[gcutfilms[i]]
+				dcutyears = dcutyears+[gcutyears[i]]
+				dcutgenres = dcutgenres+[gcutgenres[i]]
+				dcutratings = dcutratings+[gcutratings[i]]
+				dcutdirectors = dcutdirectors+[directors6[i]]
+				dcutactors = dcutactors+[actors6[i]]
+# Otherwise, just keep all of the films:
+else:
+	dcutfilms = [item for item in gcutfilms]
+	dcutyears = [item for item in gcutyears]
+	dcutgenres = [item for item in gcutgenres]
+	dcutratings = [item for item in gcutratings]
+	dcutdirectors = [item for item in directors6]
+	dcutactors = [item for item in actors6]
+
+# Status update:
+print('\nNumber fitting director criterion: '+str(len(dcutfilms)))
+print('\nLimiting actors, if requested.')
+
+# Limit actors:
+acutfilms = []
+acutyears = []
+acutgenres = []
+acutratings = []
+acutdirectors = []
+acutactors = []
+if actor != 'none':
+	for i in range(len(dcutfilms)):
+		actors = dcutactors[i].split(' ')
+		for j in range(len(actors)):
+			if actor == actors[j]:
+				acutfilms = acutfilms+[dcutfilms[i]]
+				acutyears = acutyears+[dcutyears[i]]
+				acutgenres = acutgenres+[dcutgenres[i]]
+				acutratings = acutratings+[dcutratings[i]]
+				acutdirectors = acutdirectors+[dcutdirectors[i]]
+				acutactors = acutactors+[dcutactors[i]]
+# Otherwise, just keep all of the films:
+else:
+	acutfilms = [item for item in dcutfilms]
+	acutyears = [item for item in dcutyears]
+	acutgenres = [item for item in dcutgenres]
+	acutratings = [item for item in dcutratings]
+	acutdirectors = [item for item in dcutdirectors]
+	acutactors = [item for item in dcutactors]
+
+# Denote the final result arrays:
+finalfilms = [item for item in acutfilms]
+finalyears = [item for item in acutyears]
+finalgenres = [item for item in acutgenres]
+finalratings = [item for item in acutratings]
+finaldirectors = [item for item in acutdirectors]
+finalactors = [item for item in acutactors]
+
+# Status update:
+print('\nNumber fitting actor criterion: '+str(len(acutfilms)))
 print('\nRequested films obtained. Choosing one randomly.')
 
 # Grab a random "number" of films:
@@ -471,6 +631,14 @@ choice = []
 year = []
 genre = []
 rating = []
+aflag = 0
+dflag = 0
+if director != 'none':
+	dflag = 1
+	director = []
+if actor != 'none':
+	aflag = 1
+	actor = []
 for i in range(number):
 	flag = 0
 	while flag == 0:
@@ -478,16 +646,39 @@ for i in range(number):
 		if thischoice not in choice:
 			flag = 1
 	choice = choice+[thischoice]
-	# Get the year and rating:
+	# Get the year, genre, rating, directors, actors:
 	year = year+[finalyears[finalfilms.index(thischoice)]]
 	genre = genre+[finalgenres[finalfilms.index(thischoice)]]
 	rating = rating+[finalratings[finalfilms.index(thischoice)]]
+	if dflag == 1:
+		director = director+[finaldirectors[finalfilms.index(thischoice)]]
+	if aflag == 1:
+		actor = actor+[finalactors[finalfilms.index(thischoice)]]
 
 # Print out the result:
 print('\n********************')
-for i in range(len(choice)):
-	if rating[i] == -1.0:
-		print('{} -- {:d} -- no rating -- {}'.format(choice[i],year[i],genre[i]))
-	else:
-		print('{} -- {:d} -- {:.1f}/5 -- {}'.format(choice[i],year[i],rating[i],genre[i]))
+if dflag == 0 and aflag == 0:
+	for i in range(len(choice)):
+		if rating[i] == -1.0:
+			print('{} -- {:d} -- no rating -- {}'.format(choice[i],year[i],genre[i]))
+		else:
+			print('{} -- {:d} -- {:.1f}/5 -- {}'.format(choice[i],year[i],rating[i],genre[i]))
+elif dflag == 1 and aflag == 0:
+	for i in range(len(choice)):
+		if rating[i] == -1.0:
+			print('{} -- {:d} -- no rating -- {} -- {}'.format(choice[i],year[i],genre[i],director[i]))
+		else:
+			print('{} -- {:d} -- {:.1f}/5 -- {} -- {}'.format(choice[i],year[i],rating[i],genre[i],director[i]))
+elif dflag == 0 and aflag == 1:
+	for i in range(len(choice)):
+		if rating[i] == -1.0:
+			print('{} -- {:d} -- no rating -- {} -- {}'.format(choice[i],year[i],genre[i],actor[i]))
+		else:
+			print('{} -- {:d} -- {:.1f}/5 -- {} -- {}'.format(choice[i],year[i],rating[i],genre[i],actor[i]))
+elif dflag == 1 and aflag == 1:
+	for i in range(len(choice)):
+		if rating[i] == -1.0:
+			print('{} -- {:d} -- no rating -- {} -- {} -- {}'.format(choice[i],year[i],genre[i],director[i],actor[i]))
+		else:
+			print('{} -- {:d} -- {:.1f}/5 -- {} -- {} -- {}'.format(choice[i],year[i],rating[i],genre[i],director[i],actor[i]))
 print('********************\n')

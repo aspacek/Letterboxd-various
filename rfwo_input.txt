@@ -1,13 +1,17 @@
 
-minyear = 1965
-maxyear = 1985
+minyear = 0
+maxyear = 0
 
-minrating = -1
-maxrating = -1
+minrating = 0
+maxrating = 0
 
-genre = thriller
+genre = any
 
-number = 3
+number = 1
+
+actor = none
+director = none
 
 allnew = 0
 newgenres = 0
+newactors = 1
