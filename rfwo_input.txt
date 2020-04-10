@@ -11,6 +11,9 @@ maxratingLetterboxd = 0
 minpopularity = 0
 maxpopularity = 0
 
+minwatches = 0
+maxwatches = 0
+
 genre = any
 
 number = 1
