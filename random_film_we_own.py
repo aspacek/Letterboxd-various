@@ -133,6 +133,9 @@ for i in range(len(keyword)):
 	# actor
 	elif keyword[i] == 'actor' and equals[i] == '=':
 		actor = parameter[i]
+	# liked
+	elif keyword[i] == 'liked' and equals[i] == '=':
+		liked = int(parameter[i])
 	# allnew
 	elif keyword[i] == 'allnew' and equals[i] == '=':
 		allnew = int(parameter[i])
@@ -188,6 +191,9 @@ if 'director' not in locals():
 if 'actor' not in locals():
 	print('\nactor not found in input file; actor = none by default.')
 	actor = 'none'
+if 'liked' not in locals():
+	print('\nliked not found in input file; liked = 0 by default.')
+	liked = 0
 if 'allnew' not in locals():
 	print('\nallnew not found in input file; allnew = 0 by default.')
 	allnew = 0
@@ -1092,18 +1098,164 @@ else:
 
 # Status update:
 print('\nNumber fitting watches criterion: '+str(len(wcutfilms)))
+print('\nGetting all of Alex\'s liked films.')
+
+# If allnew = 0, check for previous liked films output:
+likesflag = 0
+if allnew == 0:
+	likespath = Path('Data/Likes.csv')
+	if likespath.exists():
+		# If there is previous output, read it in:
+		likesflag = 1
+		films12 = []
+		with open('Data/Likes.csv') as csv_file:
+			csv_reader = csv.reader(csv_file, delimiter=',')
+			for row in csv_reader:
+				films12 = films12+[row[0]]
+# Otherwise, grab info from internet:
+if likesflag == 0:
+	# Grab all film ratings:
+	# The base url of the user's film ratings:
+	url = 'https://letterboxd.com/moogic/list/films-i-especially-like/detail/'
+	# Grab source code for first ratings page:
+	r = requests.get(url)
+	source = r.text
+	# Find the number of ratings pages:
+	pages = int(getstrings('last','/moogic/list/films-i-especially-like/detail/page/','/"',source))
+	# Loop through all pages and grab all the film titles:
+	# Initialize results:
+	films12 = []
+	# Start on page 1, get the films:
+	films12 = films12+getstrings('all','data-film-slug="/film/','/"',source)
+	# Now loop through the rest of the pages:
+	for page in range(pages-1):
+		# Start on page 2:
+		page = str(page + 2)
+		# Grab source code of the page:
+		r = requests.get(url+'page/'+page+'/')
+		source = r.text
+		# Get films:
+		films12 = films12+getstrings('all','data-film-slug="/film/','/"',source)
+	# Write out the data:
+	with open('Data/Likes.csv', mode='w') as outfile:
+		csvwriter = csv.writer(outfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+		for i in range(len(films12)):
+			csvwriter.writerow([films12[i]])
+
+# Status update:
+print('\nNumber of total liked films: '+str(len(films12)))
+print('\nMatching films with likes.')
+
+# Match liked films if they exist
+likescount = 0
+newestfilms = []
+newestyears = []
+newestpopularity = []
+newestgenres = []
+newestratings = []
+newestLratings = []
+newestwatches = []
+newestdirectors = []
+newestactors = []
+newestlikes = []
+for i in range(len(wcutfilms)):
+	flag = 0
+	j = 0
+	while flag == 0 and j < len(films12):
+		if wcutfilms[i] == films12[j]:
+			flag = 1
+			newestfilms = newestfilms+[wcutfilms[i]]
+			newestyears = newestyears+[wcutyears[i]]
+			newestpopularity = newestpopularity+[wcutpopularity[i]]
+			newestgenres = newestgenres+[wcutgenres[i]]
+			newestratings = newestratings+[wcutratings[i]]
+			newestLratings = newestLratings+[wcutLratings[i]]
+			newestwatches = newestwatches+[wcutwatches[i]]
+			if director != 'none':
+				newestdirectors = newestdirectors+[wcutdirectors[i]]
+			if actor != 'none':
+				newestactors = newestactors+[wcutactors[i]]
+			del films12[j]
+			newestlikes = newestlikes+[1]
+			likescount = likescount+1
+		j = j+1
+	if flag == 0:
+		newestfilms = newestfilms+[wcutfilms[i]]
+		newestyears = newestyears+[wcutyears[i]]
+		newestpopularity = newestpopularity+[wcutpopularity[i]]
+		newestgenres = newestgenres+[wcutgenres[i]]
+		newestratings = newestratings+[wcutratings[i]]
+		newestLratings = newestLratings+[wcutLratings[i]]
+		newestwatches = newestwatches+[wcutwatches[i]]
+		if director != 'none':
+			newestdirectors = newestdirectors+[wcutdirectors[i]]
+		if actor != 'none':
+			newestactors = newestactors+[wcutactors[i]]
+		newestlikes = newestlikes+[0]
+# Make sure the films match:
+if wcutfilms != newestfilms:
+	sys.exit('ERROR - in function "MAIN" - Collection films don\'t match after likes matching')
+
+# Status update:
+print('\nNumber of collection films with likes: '+str(likescount))
+print('\nLimiting by film likes, if requested.')
+
+# Limit by watches:
+likecutfilms = []
+likecutyears = []
+likecutpopularity = []
+likecutgenres = []
+likecutratings = []
+likecutLratings = []
+likecutwatches = []
+likecutdirectors = []
+likecutactors = []
+likecutlikes = []
+if liked == 1:
+	for i in range(len(newestfilms)):
+		if newestlikes[i] == 1:
+			likecutfilms = likecutfilms+[newestfilms[i]]
+			likecutyears = likecutyears+[newestyears[i]]
+			likecutpopularity = likecutpopularity+[newestpopularity[i]]
+			likecutgenres = likecutgenres+[newestgenres[i]]
+			likecutratings = likecutratings+[newestratings[i]]
+			likecutLratings = likecutLratings+[newestLratings[i]]
+			likecutwatches = likecutwatches+[newestwatches[i]]
+			if director != 'none':
+				likecutdirectors = likecutdirectors+[newestdirectors[i]]
+			if actor != 'none':
+				likecutactors = likecutactors+[newestactors[i]]
+			likecutlikes = likecutlikes+[newestlikes[i]]
+	if len(likecutfilms) == 0:
+		sys.exit('ERROR - in function "MAIN" - No remaining films with likes')
+# Otherwise, just keep all of the films:
+else:
+	likecutfilms = [item for item in newestfilms]
+	likecutyears = [item for item in newestyears]
+	likecutpopularity = [item for item in newestpopularity]
+	likecutgenres = [item for item in newestgenres]
+	likecutratings = [item for item in newestratings]
+	likecutLratings = [item for item in newestLratings]
+	likecutwatches = [item for item in newestwatches]
+	likecutdirectors = [item for item in newestdirectors]
+	likecutactors = [item for item in newestactors]
+	likecutlikes = [item for item in newestlikes]
+
+# Status update:
+print('\nNumber fitting likes criterion: '+str(len(likecutfilms)))
 print('\nRequested films obtained. Choosing one randomly.')
 
 # Denote the final result arrays:
-finalfilms = [item for item in wcutfilms]
-finalyears = [item for item in wcutyears]
-finalpopularity = [item for item in wcutpopularity]
-finalgenres = [item for item in wcutgenres]
-finalratings = [item for item in wcutratings]
-finalLratings = [item for item in wcutLratings]
-finalwatches = [item for item in wcutwatches]
-finaldirectors = [item for item in wcutdirectors]
-finalactors = [item for item in wcutactors]
+finalfilms = [item for item in likecutfilms]
+finalyears = [item for item in likecutyears]
+finalpopularity = [item for item in likecutpopularity]
+finalgenres = [item for item in likecutgenres]
+finalratings = [item for item in likecutratings]
+finalLratings = [item for item in likecutLratings]
+finalwatches = [item for item in likecutwatches]
+finaldirectors = [item for item in likecutdirectors]
+finalactors = [item for item in likecutactors]
+finallikes = [item for item in likecutlikes]
 
 # Grab a random "number" of films:
 random.seed()
@@ -1116,6 +1268,7 @@ genre = []
 rating = []
 Lrating = []
 watches = []
+likes = []
 aflag = 0
 dflag = 0
 if director != 'none':
@@ -1138,6 +1291,7 @@ for i in range(number):
 	rating = rating+[finalratings[finalfilms.index(thischoice)]]
 	Lrating = Lrating+[finalLratings[finalfilms.index(thischoice)]]
 	watches = watches+[finalwatches[finalfilms.index(thischoice)]]
+	likes = likes+[finallikes[finalfilms.index(thischoice)]]
 	if dflag == 1:
 		director = director+[finaldirectors[finalfilms.index(thischoice)]]
 	if aflag == 1:
@@ -1147,18 +1301,30 @@ for i in range(number):
 print('\n********************')
 if dflag == 0 and aflag == 0:
 	for i in range(len(choice)):
-		if rating[i] == -1.0:
-			print('{} -- {:d} -- no rating -- {:.2f}/5.00 -- {:.1f} -- {:d} -- {}'.format(choice[i],year[i],Lrating[i],popularity[i],watches[i],genre[i]))
+		if likes[i] == 1:
+			like = 'liked'
 		else:
-			print('{} -- {:d} -- {:.1f}/5.0 -- {:.2f}/5.00 -- {:.1f} -- {:d} -- {}'.format(choice[i],year[i],rating[i],Lrating[i],popularity[i],watches[i],genre[i]))
+			like = 'no like'
+		if rating[i] == -1.0:
+			print('{} -- y:{:d} -- r:no rating -- Lr:{:.2f}/5.00 -- p:{:.1f} -- w:{:d} -- {}'.format(choice[i],year[i],Lrating[i],popularity[i],watches[i],genre[i]))
+		else:
+			print('{} -- y:{:d} -- r:{:.1f}/5.0 -- Lr:{:.2f}/5.00 -- p:{:.1f} -- w:{:d} -- {} -- {}'.format(choice[i],year[i],rating[i],Lrating[i],popularity[i],watches[i],like,genre[i]))
 elif dflag == 1 and aflag == 0:
 	for i in range(len(choice)):
-		if rating[i] == -1.0:
-			print('{} -- {:d} -- no rating -- {:.2f}/5.00 -- {:.1f} -- {:d} -- {} -- {}'.format(choice[i],year[i],Lrating[i],popularity[i],watches[i],genre[i],director[i]))
+		if likes[i] == 1:
+			like = 'liked'
 		else:
-			print('{} -- {:d} -- {:.1f}/5.0 -- {:.2f}/5.00 -- {:.1f} -- {:d} -- {} -- {}'.format(choice[i],year[i],rating[i],Lrating[i],popularity[i],watches[i],genre[i],director[i]))
+			like = 'no like'
+		if rating[i] == -1.0:
+			print('{} -- y:{:d} -- r:no rating -- Lr:{:.2f}/5.00 -- p:{:.1f} -- w:{:d} -- {} -- {}'.format(choice[i],year[i],Lrating[i],popularity[i],watches[i],genre[i],director[i]))
+		else:
+			print('{} -- y:{:d} -- r:{:.1f}/5.0 -- Lr:{:.2f}/5.00 -- p:{:.1f} -- w:{:d} -- {} -- {} -- {}'.format(choice[i],year[i],rating[i],Lrating[i],popularity[i],watches[i],like,genre[i],director[i]))
 elif dflag == 0 and aflag == 1:
 	for i in range(len(choice)):
+		if likes[i] == 1:
+			like = 'liked'
+		else:
+			like = 'no like'
 		actors = actor[i].split(' ')
 		if len(actors) < 5:
 			n = len(actors)
@@ -1168,11 +1334,15 @@ elif dflag == 0 and aflag == 1:
 		for j in range(n):
 			actor5 = actor5+actors[j]+' '
 		if rating[i] == -1.0:
-			print('{} -- {:d} -- no rating -- {:.2f}/5.00 -- {:.1f} -- {:d} -- {} -- {}'.format(choice[i],year[i],Lrating[i],popularity[i],watches[i],genre[i],actor5))
+			print('{} -- y:{:d} -- r:no rating -- Lr:{:.2f}/5.00 -- p:{:.1f} -- w:{:d} -- {} -- {}'.format(choice[i],year[i],Lrating[i],popularity[i],watches[i],genre[i],actor5))
 		else:
-			print('{} -- {:d} -- {:.1f}/5.0 -- {:.2f}/5.00 -- {:.1f} -- {:d} -- {} -- {}'.format(choice[i],year[i],rating[i],Lrating[i],popularity[i],watches[i],genre[i],actor5))
+			print('{} -- y:{:d} -- r:{:.1f}/5.0 -- Lr:{:.2f}/5.00 -- p:{:.1f} -- w:{:d} -- {} -- {} -- {}'.format(choice[i],year[i],rating[i],Lrating[i],popularity[i],watches[i],like,genre[i],actor5))
 elif dflag == 1 and aflag == 1:
 	for i in range(len(choice)):
+		if likes[i] == 1:
+			like = 'liked'
+		else:
+			like = 'no like'
 		actors = actor[i].split(' ')
 		if len(actors) < 5:
 			n = len(actors)
@@ -1182,7 +1352,7 @@ elif dflag == 1 and aflag == 1:
 		for j in range(n):
 			actor5 = actor5+actors[j]+' '
 		if rating[i] == -1.0:
-			print('{} -- {:d} -- no rating -- {:.2f}/5.00 -- {:.1f} -- {:d} -- {} -- {} -- {}'.format(choice[i],year[i],Lrating[i],popularity[i],watches[i],genre[i],director[i],actor5))
+			print('{} -- y:{:d} -- r:no rating -- Lr:{:.2f}/5.00 -- p:{:.1f} -- w:{:d} -- {} -- {} -- {}'.format(choice[i],year[i],Lrating[i],popularity[i],watches[i],genre[i],director[i],actor5))
 		else:
-			print('{} -- {:d} -- {:.1f}/5.0 -- {:.2f}/5.00 -- {:.1f} -- {:d} -- {} -- {} -- {}'.format(choice[i],year[i],rating[i],Lrating[i],popularity[i],watches[i],genre[i],director[i],actor5))
+			print('{} -- y:{:d} -- r:{:.1f}/5.0 -- Lr:{:.2f}/5.00 -- p:{:.1f} -- w:{:d} -- {} -- {} -- {} -- {}'.format(choice[i],year[i],rating[i],Lrating[i],popularity[i],watches[i],like,genre[i],director[i],actor5))
 print('********************\n')

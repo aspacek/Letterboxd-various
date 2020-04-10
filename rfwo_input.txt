@@ -21,6 +21,8 @@ number = 1
 director = none
 actor = none
 
+liked = 0
+
 allnew = 0
 newgenres = 0
 newratingsLetterboxd = 0
