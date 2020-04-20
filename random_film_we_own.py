@@ -1200,7 +1200,7 @@ if wcutfilms != newestfilms:
 print('\nNumber of collection films with likes: '+str(likescount))
 print('\nLimiting by film likes, if requested.')
 
-# Limit by watches:
+# Limit by likes:
 likecutfilms = []
 likecutyears = []
 likecutpopularity = []
