@@ -1,0 +1,4 @@
+
+getratings = 0
+
+dotopyears = 1
