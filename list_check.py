@@ -259,3 +259,85 @@ if dotopyears == 1:
 			potentialrankings.sort()
 			for j in range(len(potentialrankings)):
 				print('    '+sortA[j]+' '+str(potentialrankings[j])+' '+sortB[j]+' '+str(sortC[j])+' '+str(sortD[j]))
+	# Next do all years:
+	topyears = [1990,1991,1992,1993,1994,1995,1996,1997,1998,1999]
+	topyears = topyears+[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009]
+	topyears = topyears+[2010,2011,2012,2013,2014,2015,2016,2017,2018,2019]
+	topyears = topyears+[2020]
+	# For each one, grab films and print out all remaining films with 5 stars:
+	for i in range(len(topyears)):
+		# Grab list films:
+		topyear = topyears[i]
+		url = 'https://letterboxd.com/moogic/list/moogics-top-10-films-of-'+str(topyear)+'/'
+		r = requests.get(url)
+		source = r.text
+		filmsX = getstrings('all','data-film-slug="/film/','/"',source)
+		# Loop through all films:
+		potentialfilms = []
+		potentialyears = []
+		potentialratings = []
+		potentialinlist = []
+		potentialrankings = []
+		questionablefilms = []
+		questionableyears = []
+		questionableratings = []
+		for j in range(len(films)):
+			flag = 0
+			# Check if a list film matches:
+			for k in range(len(filmsX)):
+				if films[j] == filmsX[k]:
+					flag = 1
+					# If it does match, check year and rating:
+					if years[j] != topyear or ratings[j] != 10:
+						questionablefilms = questionablefilms+[films[j]]
+						questionableyears = questionableyears+[years[j]]
+						questionableratings = questionableratings+[ratings[j]]
+					# If all is good, note placement in top films list:
+					else:
+						potentialfilms = potentialfilms+[films[j]]
+						potentialyears = potentialyears+[years[j]]
+						potentialratings = potentialratings+[ratings[j]]
+						potentialinlist = potentialinlist+['YES']
+						listflag = 0
+						for l in range(len(topfilms)):
+							if films[j] == topfilms[l]:
+								listflag = 1
+								potentialrankings = potentialrankings+[l+1]
+						if listflag == 0:
+							sys.exit('ERROR - 5 star film not in top films list')
+			if flag == 0:
+				# If film isn't in list, note it if it's the right year and it's rated 5 stars:
+				if years[j] == topyear:
+					if ratings[j] == 10:
+						potentialfilms = potentialfilms+[films[j]]
+						potentialyears = potentialyears+[years[j]]
+						potentialratings = potentialratings+[ratings[j]]
+						potentialinlist = potentialinlist+['NO ']
+						listflag = 0
+						for l in range(len(topfilms)):
+							if films[j] == topfilms[l]:
+								listflag = 1
+								potentialrankings = potentialrankings+[l+1]
+						if listflag == 0:
+							sys.exit('ERROR - 5 star film not in top films list')
+		# Print out:
+		print('\nYear = '+str(topyear))
+		print('  Questionable films:')
+		if len(questionablefilms) == 0:
+			print('    None')
+		else:
+			for j in range(len(questionablefilms)):
+				print('    '+questionablefilms[j]+' '+str(questionableyears[j])+' '+str(questionableratings[j]))
+		print('  Potential films:')
+		if len(potentialfilms) == 0:
+			print('    None')
+		else:
+			# Sort films by top list ranking:
+			# Sort all the users and interpretations by the scores:
+			sortA = [name for number,name in sorted(zip(potentialrankings,potentialinlist))]
+			sortB = [name for number,name in sorted(zip(potentialrankings,potentialfilms))]
+			sortC = [name for number,name in sorted(zip(potentialrankings,potentialyears))]
+			sortD = [name for number,name in sorted(zip(potentialrankings,potentialratings))]
+			potentialrankings.sort()
+			for j in range(len(potentialrankings)):
+				print('    '+sortA[j]+' '+str(potentialrankings[j])+' '+sortB[j]+' '+str(sortC[j])+' '+str(sortD[j]))
