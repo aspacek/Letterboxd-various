@@ -1,0 +1,24 @@
+
+minyear = 0
+maxyear = 0
+
+minrating = 3.0
+maxrating = 4.0
+
+minratingLetterboxd = 0
+maxratingLetterboxd = 0
+
+minpopularity = 0
+maxpopularity = 0
+
+genre = any
+
+number = 1
+
+director = none
+actor = none
+
+allnew = 0
+newgenres = 0
+newratingsLetterboxd = 0
+newactors = 0
