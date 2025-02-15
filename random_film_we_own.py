@@ -214,6 +214,8 @@ print('\nReading in Amanda\'s and Alex\'s film collection.')
 collectionflag = 0
 if allnew == 0:
 	collectionpath = Path('Data/Collection.csv')
+	print(collectionpath)
+	print(collectionpath.exists())
 	if collectionpath.exists():
 		# If there is previous output, read it in:
 		collectionflag = 1
@@ -241,7 +243,7 @@ if collectionflag == 0:
 	films = []
 	years = []
 	# Start on page 1, get the films and years:
-	films = films+getstrings('all','data-film-slug="/film/','/"',source)
+	films = films+getstrings('all','data-film-slug="','"',source)
 	years = years+getstrings('all','/films/year/','/">',source)
 	# Now loop through the rest of the pages:
 	if pageflag == 0:
@@ -252,7 +254,7 @@ if collectionflag == 0:
 			r = requests.get(url+'page/'+page+'/')
 			source = r.text
 			# Get films and years:
-			films = films+getstrings('all','data-film-slug="/film/','/"',source)
+			films = films+getstrings('all','data-film-slug="','"',source)
 			years = years+getstrings('all','/films/year/','/">',source)
 	# Make year values integers:
 	years = [int(item) for item in years]
@@ -299,7 +301,7 @@ if popularityflag == 0:
 	# Initialize results:
 	films2 = []
 	# Start on page 1, get the films:
-	films2 = films2+getstrings('all','data-film-slug="/film/','/"',source)
+	films2 = films2+getstrings('all','data-film-slug="','"',source)
 	# Now loop through the rest of the pages:
 	if pageflag == 0:
 		for page in range(pages-1):
@@ -309,7 +311,7 @@ if popularityflag == 0:
 			r = requests.get(url+'page/'+page+'/')
 			source = r.text
 			# Get films and years:
-			films2 = films2+getstrings('all','data-film-slug="/film/','/"',source)
+			films2 = films2+getstrings('all','data-film-slug="','"',source)
 	# Compute the popularity percentiles:
 	popularity2 = []
 	for i in range(len(films2)):

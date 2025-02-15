@@ -42,6 +42,7 @@ film2 = 'pride-prejudice'
 
 film1 = input('\nEnter Letterboxd film 1: ')
 film2 = input('\nEnter Letterboxd film 2: ')
+print('')
 
 films = [film1,film2]
 ratings = [0,0]
