@@ -12,68 +12,21 @@ import requests
 # locale module - able to convert number string with commas to an integer
 import locale
 
+sys.path.insert(0, "../Letterboxd/General-league-routines")
+from Findstrings import findstrings
+from Getstrings import getstrings
+from Numsort import numsort
+from Getuserfilms import getuserfilms
+from Getfilminfo import getfilminfo
+
+sys.path.insert(0, "../Letterboxd-personal/Overrated-underrated-check")
+from Getlistfilms import getlistfilms
+
 ##
 ## Written by Alex Spacek
 ## September 2021
+## Last edited: March 2025
 ##
-
-############################################################
-# FINDSTRINGS
-# Function that gives every location of substring in string.
-# INPUTS:
-#   substring = string (any)
-#   string    = string (any)
-##################################
-def findstrings(substring,string):
-	# Initialize flag to see if any substrings are found:
-	lastfound = -1
-	# While loop until no more substrings are found:
-	while True:
-		# Find next instance of substring in string, starting right after the location of the previous string:
-		lastfound = string.find(substring,lastfound+1)
-		# If no more substring are found, end the function:
-		if lastfound == -1:  
-			break
-		# If a new substring is found, record its location:
-		yield lastfound
-
-####################################################################################
-# GETSTRINGS
-# Function that grabs all desired substrings that are surrounded by 2 given strings:
-# INPUTS:
-#   which      = string ('first', 'last', 'all')
-#   prestring  = string (any)
-#   poststring = string (any)
-#   source     = string (the source from which to grab the desired strings)
-# OUTPUTS:
-#   strings = string or string array (whatever was wanted)
-##################################################
-def getstrings(which,prestring,poststring,source):
-	# First find the start of the string:
-	length = len(prestring)
-	prevalue = list(findstrings(prestring,source))
-	# If first instance wanted:
-	if which == 'first':
-		prevalue = [prevalue[0]+length]
-	# If last instance wanted:
-	elif which == 'last':
-		prevalue = [prevalue[-1]+length]
-	# If all instances wanted:
-	elif which == 'all':
-		prevalue = [item+length for item in prevalue]
-	else:
-		sys.exit('ERROR - in getstrings - Invalid input for "which"')
-	# Find the location of the end of string, and get the strings:
-	strings = []
-	for beginning in prevalue:
-		end = source.find(poststring,beginning)
-		value = source[beginning:end]
-		strings = strings+[value]
-	# If just one string desired, return a scalar, otherwise return the array:
-	if which == 'first' or which == 'last':
-		return strings[0]
-	elif which == 'all':
-		return strings
 
 def is_integer(n):
     try:
@@ -110,23 +63,23 @@ def filminfo(verbose,film):
 	r = requests.get(url)
 	source = r.text
 	# Get the film title:
-	film_name = getstrings('last','name: "','",',source)
+	film_name = getstrings('last',"data.production.name = '","'",source)
 	# Get the film year:
-	film_year = int(getstrings('first','releaseYear: "','",',source))
+	film_year = int(getstrings('first','data.production.releaseYear = ',';',source))
 	# Get the director(s):
 	# Check on the number of directors:
-	director_check = list(findstrings('<h3><span>Director</span></h3>',source))
+	director_check = list(findstrings('<span class="crewrole -full">Director</span>',source))
 	# If there are multiple directors or no directors:
 	if director_check == []:
-		nodirector_check = list(findstrings('<h3><span>Directors</span></h3>',source))
+		nodirector_check = list(findstrings('<span class="crewrole -full">Directors</span>',source))
 		if nodirector_check == []:
 			film_directors = ['none']
 		else:
-			subtext = getstrings('first','<h3><span>Directors</span></h3>','</div>',source)
+			subtext = getstrings('first','<span class="crewrole -full">Directors</span>','</div>',source)
 			film_directors = getstrings('all','class="text-slug">','</a>',subtext)
 	# If there is one director:
 	else:
-		subtext = getstrings('first','<h3><span>Director</span></h3>','</div>',source)
+		subtext = getstrings('first','<span class="crewrole -full">Director</span>','</div>',source)
 		film_directors = getstrings('all','class="text-slug">','</a>',subtext)
 	# Get the actors:
 	# Check on the number of actors:
@@ -141,20 +94,34 @@ def filminfo(verbose,film):
 	else:
 		film_actors = ['none']
 	# Get the runtime, if there is one:
-#	print(film)
-	runtime_check = getstrings('first','<p class="text-link text-footer">\n\t\t\t\t','More details at',source)
-	if runtime_check == '\n\t\t\t\t\n\t\t\t\t\t':
+	runtime_check = getstrings('first','<p class="text-link text-footer">\n\t\t\t\t\t\n\t\t\t\t\t','More at',source)
+	runtime_check_test = ['0','1','2','3','4','5','6','7','8','9']
+	runtime_check_flag = 0
+	if runtime_check == '':
+		runtime_check_flag = 2
+	else:
+		for val in runtime_check_test:
+			if runtime_check[0] == val:
+				runtime_check_flag = 1
+	if runtime_check_flag == 0 or runtime_check_flag == 2:
+		print('')
+		print(url)
+		print('No runtime found')
+		print('runtime_check_flag = '+str(runtime_check_flag))
+		print(runtime_check)
 		film_runtime = -1
 	else:
-		string = getstrings('first','<p class="text-link text-footer">\n\t\t\t\t','&nbsp;min',source)
-		if is_integer(string):
-			film_runtime = int(getstrings('first','<p class="text-link text-footer">\n\t\t\t\t','&nbsp;min',source))
+		runtime = getstrings('first','<p class="text-link text-footer">\n\t\t\t\t\t','&nbsp;min',source)
+		locale.setlocale(locale.LC_ALL,'en_US.UTF-8')
+		if runtime != '':
+			runtime_int = locale.atoi(runtime)
+			film_runtime = runtime_int
 		else:
-			newstring = ''
-			for bit in string:
-				if is_integer(bit):
-					newstring = newstring+bit
-			film_runtime = int(newstring)
+			print('')
+			print('** SOMETHING WENT WRONG IN GETTING A RUNTIME **')
+			usertime = int(input('Enter the runtime (in minutes) of '+film+': '))
+			film_runtime = usertime
+			print('')
 	# Get the average rating, if there is one:
 	avgrating_check = list(findstrings('name="twitter:data2" content="',source))
 	if avgrating_check == []:
@@ -216,24 +183,35 @@ def filminfo(verbose,film):
 ##################
 
 # Min/max views
-view_min = 200000
-view_max = 1000000000
+view_min = 500000
+view_max = 10000000000
 view_min2 = 1
-view_max2 = 500
+view_max2 = 5000
 
 # Min/max runtimes
-runtime_min = 60
+runtime_min = 40
 runtime_max = 480
-runtime_min2 = 60
-runtime_max2 = 240
+runtime_min2 = 40
+runtime_max2 = 480
+
+# Min ratings
+rating_min = 4.2
+rating_min2 = 4.2
 
 # Verbose?
 verbose = 0
 
 # Top 1000 films list
-url = 'https://letterboxd.com/arhodes/list/top-1000-highest-rated-on-letterboxd/'
+url = 'https://letterboxd.com/arhodes/list/top-5000-highest-rated-on-letterboxd/by/rating/'
 
 # Read in all films:
+getratings = 0
+films_temp = getlistfilms(url,getratings)
+
+# Compute overall min rating
+minrating = min([rating_min,rating_min2])
+
+# Grab film info:
 films = []
 ratings = []
 runtimes = []
@@ -242,44 +220,11 @@ films2 = []
 ratings2 = []
 runtimes2 = []
 views2 = []
-# Grab source code for the first page:
-r = requests.get(url)
-source = r.text
-# Find the number of pages
-pagecheck = list(findstrings('/page/',source))
-if pagecheck == []:
-	pages = 1
-else:
-	pages = int(getstrings('last','/page/','/">',source))
 print('')
-print('# Pages = '+str(pages))
-# Loop through all pages and grab all the film titles:
-films_temp = []
-# Start on page 1, get the films:
-text_blocks = getstrings('all','data-film-slug="/film','data-menu',source)
-for i in range(len(text_blocks)):
-	correct_film_check = list(findstrings('data-linked="linked"',text_blocks[i]))
-	if correct_film_check != []:
-		films_temp = films_temp+[getstrings('first','/','/"',text_blocks[i])]
-# Now loop through the rest of the pages:
-if pages > 1:
-	for page in range(pages-1):
-		# Start on page 2:
-		page = str(page + 2)
-		print('')
-		print('Starting page '+page)
-		# Grab source code of the page:
-		r = requests.get(url+'page/'+page+'/')
-		source = r.text
-		# Get films:
-		text_blocks = getstrings('all','data-film-slug="/film','data-menu',source)
-		for i in range(len(text_blocks)):
-			correct_film_check = list(findstrings('data-linked="linked"',text_blocks[i]))
-			if correct_film_check != []:
-				films_temp = films_temp+[getstrings('first','/','/"',text_blocks[i])]
-# Grab film info:
-print('')
-for i in range(len(films_temp)):
+ratingflag = 0
+imax = len(films_temp)
+i = 0
+while i < imax and ratingflag == 0:
 	if i % 50 == 0:
 		print('Film # '+str(i+1)+' / '+str(len(films_temp)))
 	fname,fyear,fdirectors,factors,fruntime,favgrating,fviews,fgenres = filminfo(verbose,films_temp[i])
@@ -305,6 +250,9 @@ for i in range(len(films_temp)):
 		ratings2 = ratings2+[favgrating]
 		runtimes2 = runtimes2+[fruntime]
 		views2 = views2+[fviews]
+	if favgrating < minrating:
+		ratingflag = 1
+	i = i+1
 
 # Sort results by rating:
 xfilms = [val for val in films]
@@ -333,10 +281,10 @@ runtimes_sorted2.reverse()
 views_sorted2.reverse()
 
 # Print results:
-print('')
+print('\nTHE POPULIST ELITE')
 for i in range(len(films_sorted)):
 	print('{:3d} - {:80s} - {:4.2f} - {:6d} - {:7d}'.format(i+1,films_sorted[i],ratings_sorted[i],runtimes_sorted[i],views_sorted[i]))
-print('')
+print('\nTHE UNPROVEN ELITE')
 for i in range(len(films_sorted2)):
 	print('{:3d} - {:80s} - {:4.2f} - {:6d} - {:7d}'.format(i+1,films_sorted2[i],ratings_sorted2[i],runtimes_sorted2[i],views_sorted2[i]))
 print('')
